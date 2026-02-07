@@ -1,10 +1,21 @@
 from fastapi import FastAPI
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+from model.chat import get_chat_response
 
 import pandas as pd
 import os
 
 app = FastAPI()
+
+# Allow CORS for frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 from fastapi.responses import Response
 import json
@@ -37,6 +48,32 @@ def get_news(filter: str = None):
     if filter:
         return [item for item in news_items if filter.lower() in item["category"].lower() or filter.lower() in item["title"].lower()]
     return news_items
+
+from main_functions import handle_chat
+
+# ... existing code ...
+
+@app.get("/chat")
+async def chat(query: str):
+    """
+    ENDPOINT: Recieves the user's message from the Frontend.
+    """
+    if not query:
+        print("Received empty query.")
+        return {"error": "Query is empty"}
+    
+    # 1. Print what we recieved for debugging
+    print(f"\n--- Received Query: {query} ---")
+    
+    # 2. Call the logic function in main_functions.py
+    # This keeps the API code clean and separates the logic
+    response = await handle_chat(query)
+    
+    # 3. Print the response we got back
+    print(f"--- Sending Response: {response} ---\n")
+    
+    # 4. Send the result back to the frontend
+    return {"response": response}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

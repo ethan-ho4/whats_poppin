@@ -2,7 +2,33 @@ import React, { useState } from 'react';
 
 function ChatView({ onEnter }) {
     const [selectedTopic, setSelectedTopic] = useState(null);
+    const [query, setQuery] = useState('');
+    const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
     const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
+
+    const handleSearch = async () => {
+        if (!query.trim()) return;
+
+        setLoading(true);
+        setResponse(null);
+        try {
+            const res = await fetch(`http://localhost:8000/chat?query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            setResponse(data.response || "No response received.");
+        } catch (error) {
+            console.error("Error fetching chat response:", error);
+            setResponse("Error connecting to server.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
 
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#F3F4F6', margin: 0, padding: 0, overflowY: 'auto' }}>
@@ -139,15 +165,18 @@ function ChatView({ onEnter }) {
                     transition: 'all 0.3s ease',
                     overflow: 'hidden' // Ensure shine stays inside
                 }}
-                onMouseOver={(e) => {
-                    e.currentTarget.style.boxShadow = '0 20px 30px -5px rgba(59, 130, 246, 0.2), 0 8px 10px -6px rgba(59, 130, 246, 0.2)';
-                }}
-                onMouseOut={(e) => {
-                    e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)';
-                }}
+                    onMouseOver={(e) => {
+                        e.currentTarget.style.boxShadow = '0 20px 30px -5px rgba(59, 130, 246, 0.2), 0 8px 10px -6px rgba(59, 130, 246, 0.2)';
+                    }}
+                    onMouseOut={(e) => {
+                        e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)';
+                    }}
                 >
                     <input
                         type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={handleKeyDown}
                         placeholder="Ask about global news, trends, or specific countries..."
                         style={{
                             width: '100%',
@@ -163,38 +192,57 @@ function ChatView({ onEnter }) {
                             outline: 'none',
                             transition: 'all 0.3s ease',
                             fontFamily: '"Roboto", sans-serif',
-                            fontWeight: '400'
+                            fontWeight: '400',
+                            color: 'black'
                         }}
                     />
-                    <button style={{
-                        position: 'absolute',
-                        right: '0.75rem',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        transform: 'translateY(-50%)',
-                        backgroundColor: 'transparent',
-                        color: '#64748B',
-                        border: 'none',
-                        borderRadius: '50%',
-                        width: '3rem',
-                        height: '3rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
+                    <button
+                        onClick={handleSearch}
+                        style={{
+                            position: 'absolute',
+                            right: '0.75rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            backgroundColor: 'transparent',
+                            color: query ? '#3B82F6' : '#64748B',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '3rem',
+                            height: '3rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
                         onMouseOver={(e) => {
-                            e.target.style.color = '#475569';
+                            e.target.style.color = query ? '#2563EB' : '#475569';
                         }}
                         onMouseOut={(e) => {
-                            e.target.style.color = '#64748B';
+                            e.target.style.color = query ? '#3B82F6' : '#64748B';
                         }}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
+                        {loading ? (
+                            <div style={{
+                                width: '20px',
+                                height: '20px',
+                                border: '2px solid #3B82F6',
+                                borderTop: '2px solid transparent',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite'
+                            }} />
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        )}
+                        <style>{`
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `}</style>
                     </button>
                 </div>
 
@@ -211,19 +259,42 @@ function ChatView({ onEnter }) {
                             transition: 'all 0.2s',
                             boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
                         }}
-                        onMouseOver={(e) => {
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.color = '#64748B';
-                        }}
-                        onMouseOut={(e) => {
-                            e.target.style.transform = 'translateY(0)';
-                            e.target.style.color = '#6B7280';
-                        }}
+                            onMouseOver={(e) => {
+                                e.target.style.transform = 'translateY(-2px)';
+                                e.target.style.color = '#64748B';
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.transform = 'translateY(0)';
+                                e.target.style.color = '#6B7280';
+                            }}
                         >
                             {hint}
                         </button>
                     ))}
                 </div>
+
+                {/* Response Area */}
+                {response && (
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '1.5rem',
+                        backgroundColor: 'white',
+                        borderRadius: '1rem',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        maxWidth: '800px',
+                        width: '100%',
+                        animation: 'fadeIn 0.5s ease-out'
+                    }}>
+                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#1F2937', fontSize: '1.1rem' }}>Fuzzy Search Result:</h3>
+                        <p style={{ margin: 0, color: '#4B5563', lineHeight: '1.5' }}>{response}</p>
+                    </div>
+                )}
+                <style>{`
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}</style>
 
                 {/* News Ticker */}
                 <div style={{
@@ -259,7 +330,7 @@ function ChatView({ onEnter }) {
                         letterSpacing: '1px',
                         textTransform: 'uppercase'
                     }}>
-                        BREAKING: Global markets rally as tech sector surges | UN announces new climate initiative for 2030 | Japan introduces new high-speed rail network | UK sports update: Premier League finals set for next week | US Economy shows strong growth in Q3 | New AI regulations proposed by EU commission | Space tourism flights fully booked for 2026 | 
+                        BREAKING: Global markets rally as tech sector surges | UN announces new climate initiative for 2030 | Japan introduces new high-speed rail network | UK sports update: Premier League finals set for next week | US Economy shows strong growth in Q3 | New AI regulations proposed by EU commission | Space tourism flights fully booked for 2026 |
                     </div>
                 </div>
             </div>

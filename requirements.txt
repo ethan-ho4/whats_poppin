@@ -12,8 +12,29 @@ numpy
 # HTTP Requests
 requests
 
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# Backboard SDK for AI Assistant
+backboard
+
+# Data Processing
+pandas
+numpy
+
+# HTTP Requests
+requests
+
 # Environment Variables
 python-dotenv
+
+# Text Embeddings (Local & Free)
+sentence-transformers
+torch --index-url https://download.pytorch.org/whl/cpu
+
+# Chat Completion
+openai
 
 # Async Support (usually included with Python 3.7+, but explicit for clarity)
 asyncio
