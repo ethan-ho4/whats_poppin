@@ -82,9 +82,209 @@ GDELT processes millions of news articles daily and automatically tags them with
 - `WB_1419_TUBERCULOSIS`
 
 **Technology & Digital**
-- `WB_133_INFORMATION_AND_COMMUNICATION_TECHNOLOGIES`
-- `WB_678_DIGITAL_GOVERNMENT`
-- `WB_694_BROADCAST_AND_MEDIA`
+- `WB_133_INFORMATION_AND_COMMUNICATION_TECHNOLOGIES` - General ICT/tech
+- `WB_678_DIGITAL_GOVERNMENT` - Digital government/e-government
+- `WB_694_BROADCAST_AND_MEDIA` - Media and broadcasting technology
+- `WB_286_TELECOMMUNICATIONS_AND_BROADBAND_ACCESS` - Telecom and internet access
+- `WB_652_ICT_APPLICATIONS` - ICT applications
+- `WB_667_ICT_INFRASTRUCTURE` - ICT infrastructure
+- `WB_672_NETWORK_MANAGEMENT` - Network management
+- `WB_2943_SWITCHES` - Network switches and routing
+- `WB_1331_HEALTH_TECHNOLOGIES` - Medical and health technology
+- `WB_1350_PHARMACEUTICALS` - Pharmaceutical technology
+
+**Note:** While GDELT doesn't have specific "AI" or "machine learning" theme codes (the taxonomy predates mainstream AI), technology articles are tagged with the ICT themes above.
+
+---
+
+## 📱 Comprehensive Technology Themes
+
+### Information & Communication Technology
+- `WB_133_INFORMATION_AND_COMMUNICATION_TECHNOLOGIES` - General ICT/technology
+- `WB_678_DIGITAL_GOVERNMENT` - E-government and digital public services
+- `WB_694_BROADCAST_AND_MEDIA` - Media and broadcasting technology
+- `WB_286_TELECOMMUNICATIONS_AND_BROADBAND_ACCESS` - Telecom and internet access
+- `WB_652_ICT_APPLICATIONS` - ICT applications and software
+- `WB_667_ICT_INFRASTRUCTURE` - ICT infrastructure and networks
+- `WB_672_NETWORK_MANAGEMENT` - Network management and administration
+- `WB_2943_SWITCHES` - Network switches and routing equipment
+- `WB_669_SOFTWARE_INFRASTRUCTURE` - Software infrastructure
+- `WB_2944_SERVERS` - Server infrastructure
+- `WB_2945_DATABASE` - Database systems
+
+### Cybersecurity & Digital Safety
+- `WB_670_ICT_SECURITY` - ICT security and data protection
+- `WB_2372_AUTHENTICATION_AND_AUTHORIZATION` - Authentication systems
+- `CYBER_ATTACK` - Cyber attacks and hacking incidents
+- `SURVEILLANCE` - Surveillance and monitoring
+- `DATA_PRIVACY` - Data privacy concerns (if present in your data)
+
+### Social Media & Digital Communication
+- `MEDIA_SOCIAL` - Social media platforms
+- `WB_662_SOCIAL_MEDIA` - Social media engagement
+- `MEDIA_MSM` - Mainstream media
+- `MEDIA_CENSORSHIP` - Media censorship
+
+### Science & Innovation
+- `SCIENCE` - Scientific research and development
+- `SOC_INNOVATION` - Innovation and new developments
+- `SOC_EMERGINGTECH` - Emerging technologies
+- `WB_376_INNOVATION_TECHNOLOGY_AND_ENTREPRENEURSHIP` - Tech entrepreneurship
+
+### Space & Satellites
+- `WB_2120_SATELLITES` - Satellite technology
+
+### Energy Technology
+- `WB_525_RENEWABLE_ENERGY` - Renewable energy technology
+- `ENV_SOLAR` - Solar energy
+- `ENV_COAL` - Coal energy
+- `ENV_NATURALGAS` - Natural gas
+
+---
+
+## 🌍 Comprehensive World Politics Themes
+
+### Political Leadership & Government
+- `LEADER` - Political leaders
+- `TAX_FNCACT_PRESIDENT` - Presidents
+- `TAX_FNCACT_PRIME_MINISTER` - Prime ministers
+- `TAX_FNCACT_MINISTER` - Ministers
+- `TAX_FNCACT_GOVERNOR` - Governors
+- `TAX_FNCACT_MAYOR` - Mayors
+- `TAX_FNCACT_KING` - Monarchs/kings
+- `TAX_FNCACT_QUEEN` - Queens
+- `TAX_FNCACT_PRINCE` - Princes
+- `GENERAL_GOVERNMENT` - General government activities
+- `GOV_LOCALGOV` - Local government
+
+### Elections & Democracy
+- `ELECTION` - Elections and voting
+- `DEMOCRACY` - Democratic processes
+- `TAX_FNCACT_CANDIDATE` - Political candidates
+- `TAX_FNCACT_CANDIDATES` - Multiple candidates
+- `TAX_POLITICAL_PARTY` - Political parties (general)
+- `TAX_POLITICAL_PARTY_DEMOCRATIC_PARTY` - Democratic Party
+- `TAX_POLITICAL_PARTY_DEMOCRAT` - Democrats
+- `TAX_POLITICAL_PARTY_DEMOCRATS` - Democrats (plural)
+- `TAX_POLITICAL_PARTY_REPUBLICAN` - Republican Party
+- `TAX_POLITICAL_PARTY_REPUBLICANS` - Republicans (plural)
+
+### Government Policy & Administration
+- `EPU_POLICY` - Economic policy uncertainty
+- `EPU_POLICY_GOVERNMENT` - Government policy
+- `EPU_POLICY_LAW` - Law and legal policy
+- `EPU_POLICY_POLICY` - General policy
+- `USPEC_POLICY1` - Policy uncertainty
+- `WB_696_PUBLIC_SECTOR_MANAGEMENT` - Public sector management
+- `WB_723_PUBLIC_ADMINISTRATION` - Public administration
+- `LEGISLATION` - Legislation and lawmaking
+- `CONSTITUTIONAL` - Constitutional matters
+- `WB_845_LEGAL_AND_REGULATORY_FRAMEWORK` - Legal/regulatory framework
+
+### International Relations & Diplomacy
+- `WB_2473_DIPLOMACY_AND_NEGOTIATIONS` - Diplomacy
+- `WB_939_NEGOTIATION` - Negotiations
+- `NEGOTIATIONS` - International negotiations
+- `WB_1024_PUBLIC_INTERNATIONAL_LAW` - International law
+- `WB_1026_TREATIES` - Treaties and agreements
+- `ALLIANCE` - Political/military alliances
+- `TAX_FNCACT_AMBASSADOR` - Ambassadors
+- `TAX_FNCACT_DIPLOMATS` - Diplomats
+- `TAX_FNCACT_FOREIGN_MINISTER` - Foreign ministers
+- `SOVEREIGNTY` - National sovereignty
+
+### Conflict & Security
+- `WB_2432_FRAGILITY_CONFLICT_AND_VIOLENCE` - Conflict and fragility
+- `WB_2433_CONFLICT_AND_VIOLENCE` - Violence and conflict
+- `ARMEDCONFLICT` - Armed conflict
+- `MILITARY` - Military operations
+- `WB_2462_POLITICAL_VIOLENCE_AND_WAR` - Political violence/war
+- `WB_2468_CONVENTIONAL_WAR` - Conventional warfare
+- `WB_739_POLITICAL_VIOLENCE_AND_CIVIL_WAR` - Civil war
+- `WB_2467_TERRORISM` - Terrorism
+- `TERROR` - Terror attacks
+- `WB_2490_NATIONAL_PROTECTION_AND_SECURITY` - National security
+- `EPU_CATS_NATIONAL_SECURITY` - National security concerns
+- `SECURITY_SERVICES` - Security services
+
+### Peace & Conflict Resolution
+- `WB_2470_PEACE_OPERATIONS_AND_CONFLICT_MANAGEMENT` - Peace operations
+- `WB_2471_PEACEKEEPING` - Peacekeeping operations
+- `WB_2482_RECONCILIATION` - Reconciliation efforts
+- `CEASEFIRE` - Ceasefire agreements
+
+### Governance & Corruption
+- `WB_831_GOVERNANCE` - Governance systems
+- `WB_832_ANTI_CORRUPTION` - Anti-corruption measures
+- `WB_2024_ANTI_CORRUPTION_AUTHORITIES` - Anti-corruption authorities
+- `WB_2019_ANTI_CORRUPTION_LEGISLATION` - Anti-corruption laws
+- `WB_2020_BRIBERY_FRAUD_AND_COLLUSION` - Bribery and fraud
+- `WB_2025_INVESTIGATION` - Investigations
+- `WB_2026_PREVENTION` - Prevention measures
+- `CORRUPTION` - Corruption
+- `TRANSPARENCY` - Government transparency
+
+### Political Ideology & Systems
+- `IDEOLOGY` - Political ideology
+- `SLFID_DICTATORSHIP` - Dictatorship
+- `EXTREMISM` - Political extremism
+- `TAX_FNCACT_COMMUNIST` - Communist ideology
+
+### Human Rights & Civil Liberties
+- `WB_2203_HUMAN_RIGHTS` - Human rights
+- `SELF_IDENTIFIED_HUMAN_RIGHTS` - Human rights issues
+- `HUMAN_RIGHTS_ABUSES` - Human rights violations
+- `WB_2507_HUMAN_RIGHTS_ABUSES_AND_VIOLATIONS` - HR violations
+- `WB_2519_RESPONSES_TO_HUMAN_RIGHTS_ABUSES` - Responses to abuses
+- `UNGP_POLITICAL_FREEDOMS` - Political freedoms
+- `UNGP_FREEDOM_FROM_DISCRIMINATION` - Freedom from discrimination
+- `DISCRIMINATION` - Discrimination
+
+### Migration & Refugees
+- `IMMIGRATION` - Immigration
+- `WB_2837_IMMIGRATION` - Immigration policy
+- `EPU_CATS_MIGRATION_FEAR_MIGRATION` - Migration concerns
+- `WB_2836_MIGRATION_POLICIES_AND_JOBS` - Migration policies
+- `REFUGEES` - Refugee crises
+- `CRISISLEX_T09_DISPLACEDRELOCATEDEVACUATED` - Displaced persons
+
+### Protests & Civil Unrest
+- `PROTEST` - Protests and demonstrations
+- `TAX_FNCACT_DEMONSTRATORS` - Demonstrators
+- `UNREST_BELLIGERENT` - Civil unrest
+- `VIOLENT_UNREST` - Violent unrest
+- `POLITICAL_TURMOIL` - Political turmoil
+- `REBELLION` - Rebellions
+- `INSURGENCY` - Insurgencies
+
+---
+
+## ⚽ Comprehensive Sports Themes
+
+### Sports Infrastructure & Organizations
+- `SOC_SPORTS` - General sports (if present)
+- `SPORTS_OLYMPICS` - Olympic Games (if present)
+- `SPORTS_WORLDCUP` - World Cup events (if present)
+
+### Common Sports Terms
+- `TAX_FNCACT_CHAMPION` - Champions
+- `TAX_FNCACT_COACH` - Coaches (if present)
+- `TAX_FNCACT_ATHLETE` - Athletes (if present)
+- `COMPETITION` - Sports competitions (if present)
+- `TOURNAMENT` - Tournaments (if present)
+
+**Note:** GDELT's theme taxonomy is less comprehensive for sports compared to politics and technology. Sports coverage is often captured through:
+- Person names (athletes, coaches)
+- Location names (stadiums, cities hosting events)
+- General themes like `TAX_FNCACT_CHAMPION`
+- Organization names extracted separately
+
+For sports news, you may need to rely more on:
+1. **Source filtering** - Sports news websites
+2. **Title keywords** - Look for sport names in titles
+3. **Person extraction** - Athletes mentioned in V2Persons field
+
+---
 
 **Governance & Law**
 - `WB_696_PUBLIC_SECTOR_MANAGEMENT`
