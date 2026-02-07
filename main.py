@@ -7,11 +7,32 @@ import zipfile
 from datetime import datetime
 
 # GDELT 2.0 Global Knowledge Graph (GKG)
+# GDELT 2.0 Global Knowledge Graph (GKG)
 MASTER_URL_TRANSLATION = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
 MASTER_URL_ORIGINAL = "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
 
 ORIGINAL_ARCHIVE_FILE = "original_live_news.csv"
 ARCHIVE_FILE = "live_news.csv"
+
+# --- CONFIGURATION: SELECT FIELDS TO EXTRACT ---
+# You can comment out lines to exclude them.
+# The keys are the column indices (0-indexed), values are the column names.
+GKG_FIELDS = {
+    1:  'date',              # Article timestamp
+    3:  'source_name',       # News outlet
+    4:  'url',               # Article URL
+
+    7:  'country',           # Country mentioned
+    8:  'state',             # State / region
+    9:  'city',              # City
+
+    10: 'primary_category',  # Broad topic (Politics, Econ, etc.)
+
+    11: 'themes',            # What the article is about (semantic)
+    15: 'persons',           # People mentioned
+    16: 'organizations',     # Orgs, companies, gov agencies
+    17: 'locations',         # Places mentioned in text
+}
 
 def get_latest_url(master_url):
     """Fetches the latest GKG file URL from the given master list."""
@@ -36,11 +57,43 @@ def process_file(url, archive_file):
         r = requests.get(url)
         r.raise_for_status()
         
-        # 1: DATE, 3: SOURCE, 4: URL, 7: TONE, 9: PERSONS, 11: ORGS, 15: LOCATIONS
-        df = pd.read_csv(io.BytesIO(r.content), compression='zip', sep='\t', header=None, 
-                         usecols=[1, 3, 4, 7, 9, 11, 15], 
-                         names=['date', 'source_name', 'url', 'tone', 'persons', 'organizations', 'locations'],
-                         encoding='latin-1', on_bad_lines='skip')
+        # We need to process line-by-line to apply the user's specific logic
+        # regarding column dropping before extraction.
+        rows = []
+        
+        with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+            # GDELT zips usually contain one file
+            filename = z.namelist()[0]
+            with z.open(filename) as f:
+                for raw_line in f:
+                    # Decode (GDELT is usually ISO-8859-1 / Latin-1)
+                    try:
+                        line = raw_line.decode('latin-1').rstrip('\n')
+                    except:
+                        line = raw_line.decode('utf-8', errors='ignore').rstrip('\n')
+                        
+                    cols = line.split('\t')
+                    
+                    # --- USER REQUESTED LOGIC START ---
+                    # "Drop V2Tone completely"
+                    # Note: This removes the LAST column.
+                    cols = cols[:-1]
+                    # --- USER REQUESTED LOGIC END ---
+                    
+                    # Extract fields based on GKG_FIELDS configuration
+                    row_data = {}
+                    for idx, name in GKG_FIELDS.items():
+                        # Safety check for index existence
+                        if idx < len(cols):
+                            value = cols[idx]
+                            row_data[name] = value
+                        else:
+                            row_data[name] = None
+                    
+                    rows.append(row_data)
+        
+        # Create DataFrame from the processed list
+        df = pd.DataFrame(rows)
                          
         print(f"Extracted {len(df)} rows.")
         
