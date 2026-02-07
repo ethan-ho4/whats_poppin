@@ -11,8 +11,7 @@ from datetime import datetime
 MASTER_URL_TRANSLATION = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
 MASTER_URL_ORIGINAL = "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
 
-ORIGINAL_ARCHIVE_FILE = "original_live_news.csv"
-ARCHIVE_FILE = "live_news.csv"
+ARCHIVE_FILE = "news.csv"
 
 # --- CONFIGURATION: SELECT FIELDS TO EXTRACT ---
 # You can comment out lines to exclude them.
@@ -113,8 +112,7 @@ def run_pipeline():
     last_processed_orig = None
     
     print("--- Starting GDELT 15-Minute Mass News Pipeline ---")
-    print(f"Translated Output: {ARCHIVE_FILE}")
-    print(f"Original Output:   {ORIGINAL_ARCHIVE_FILE}")
+    print(f"Combined Output: {ARCHIVE_FILE}")
     print("---------------------------------------------------")
     
     while True:
@@ -129,7 +127,7 @@ def run_pipeline():
         url_orig = get_latest_url(MASTER_URL_ORIGINAL)
         if url_orig and url_orig != last_processed_orig:
             print(f"\n[{datetime.now().strftime('%H:%M:%S')}] New ORIGINAL update detected!")
-            if process_file(url_orig, ORIGINAL_ARCHIVE_FILE):
+            if process_file(url_orig, ARCHIVE_FILE):
                 last_processed_orig = url_orig
                 
         if not url_trans and not url_orig:
