@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const [currentView, setCurrentView] = useState('chat'); // 'chat' or 'globe'
+  const [selectedTopic, setSelectedTopic] = useState(null);
+  const [filteredNews, setFilteredNews] = useState([]);
 
   const handleEnterGlobe = () => {
     setCurrentView('globe');
@@ -12,6 +14,13 @@ function App() {
 
   const handleBackToHome = () => {
     setCurrentView('chat');
+    setSelectedTopic(null);
+    setFilteredNews([]);
+  };
+
+  const handleTopicSelect = (topic, newsData) => {
+    setSelectedTopic(topic);
+    setFilteredNews(newsData);
   };
 
   return (
@@ -24,7 +33,7 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <ChatView onEnter={handleEnterGlobe} />
+          <ChatView onEnter={handleEnterGlobe} onTopicSelect={handleTopicSelect} />
         </motion.div>
       ) : (
         <motion.div
@@ -34,7 +43,11 @@ function App() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <GlobeView onBackToHome={handleBackToHome} />
+          <GlobeView 
+            onBackToHome={handleBackToHome} 
+            selectedTopic={selectedTopic}
+            filteredNews={filteredNews}
+          />
         </motion.div>
       )}
     </AnimatePresence>
@@ -42,3 +55,4 @@ function App() {
 }
 
 export default App;
+

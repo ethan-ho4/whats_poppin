@@ -1,8 +1,29 @@
 import React, { useState } from 'react';
 
-function ChatView({ onEnter }) {
+function ChatView({ onEnter, onTopicSelect }) {
     const [selectedTopic, setSelectedTopic] = useState(null);
     const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
+
+    const handleTopicClick = (topic) => {
+        setSelectedTopic(topic);
+        
+        // Navigate immediately
+        if (onTopicSelect) {
+            onTopicSelect(topic);
+        }
+        onEnter();
+        
+        // Fetch data in background (non-blocking)
+        fetch(`http://localhost:8000/news?filter=${encodeURIComponent(topic)}`)
+            .then(response => response.json())
+            .then(newsData => {
+                // Data will be available for GlobeView to use
+                console.log('News loaded for', topic, newsData);
+            })
+            .catch(error => {
+                console.error('Error fetching news:', error);
+            });
+    };
 
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#F3F4F6', margin: 0, padding: 0, overflowY: 'auto' }}>
@@ -38,7 +59,7 @@ function ChatView({ onEnter }) {
                     {topics.map((topic, index) => (
                         <React.Fragment key={topic}>
                             <span
-                                onClick={() => setSelectedTopic(topic)}
+                                onClick={() => handleTopicClick(topic)}
                                 style={{
                                     fontSize: '0.95rem',
                                     fontFamily: '"Roboto", sans-serif',

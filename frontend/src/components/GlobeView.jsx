@@ -83,10 +83,11 @@ function GlobeView({ onBackToHome }) {
                 left: 0,
                 right: 0,
                 width: '100%',
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
+                borderRadius: '0 0 1rem 1rem',
                 padding: '1rem 2rem',
                 boxSizing: 'border-box',
                 display: 'flex',
@@ -95,7 +96,7 @@ function GlobeView({ onBackToHome }) {
                 transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
                 transition: 'transform 0.3s ease-in-out',
                 zIndex: 1000,
-                boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
             }}>
                 <h1 style={{
                     margin: 0,
@@ -133,20 +134,20 @@ function GlobeView({ onBackToHome }) {
                 </button>
             </nav>
 
-            {/* Instructions */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="absolute bottom-6 left-6 z-10 pointer-events-auto"
-            >
-                <div className="bg-white/5 backdrop-blur-md rounded-lg p-3 border border-white/10 flex items-center gap-3 text-sm text-gray-300 max-w-sm">
-                    <Info size={16} className="text-blue-400 shrink-0" />
-                    <p>
-                        Navigate the globe by dragging. Scroll to zoom.
-                    </p>
-                </div>
-            </motion.div>
+            {/* Bottom Branding */}
+            <div style={{
+                position: 'fixed',
+                bottom: '1rem',
+                right: '1.5rem',
+                zIndex: 100,
+                color: 'rgba(255, 255, 255, 0.4)',
+                fontSize: '0.85rem',
+                fontFamily: '"Roboto", sans-serif',
+                letterSpacing: '2px',
+                textTransform: 'uppercase'
+            }}>
+                What's Poppin © 2026
+            </div>
 
             {/* Side Panel */}
             <NewsPanel
