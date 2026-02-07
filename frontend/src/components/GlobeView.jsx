@@ -83,7 +83,10 @@ function GlobeView({ onBackToHome }) {
                 left: 0,
                 right: 0,
                 width: '100%',
-                backgroundColor: '#22C55E',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 padding: '1rem 2rem',
                 boxSizing: 'border-box',
                 display: 'flex',
@@ -91,7 +94,8 @@ function GlobeView({ onBackToHome }) {
                 alignItems: 'center',
                 transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
                 transition: 'transform 0.3s ease-in-out',
-                zIndex: 1000
+                zIndex: 1000,
+                boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
             }}>
                 <h1 style={{
                     margin: 0,
@@ -106,17 +110,24 @@ function GlobeView({ onBackToHome }) {
                     onClick={onBackToHome}
                     style={{
                         backgroundColor: 'white',
-                        color: '#22C55E',
+                        color: 'black',
                         border: 'none',
                         padding: '0.5rem 1.5rem',
                         borderRadius: '0.5rem',
                         fontSize: '1rem',
                         fontWeight: '600',
                         cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
                     }}
-                    onMouseOver={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                    onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
+                    onMouseOver={(e) => {
+                        e.target.style.backgroundColor = '#e5e7eb';
+                        e.target.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={(e) => {
+                        e.target.style.backgroundColor = 'white';
+                        e.target.style.transform = 'translateY(0)';
+                    }}
                 >
                     Chat
                 </button>
