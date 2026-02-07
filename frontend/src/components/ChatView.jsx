@@ -1,28 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 
 function ChatView({ onEnter }) {
-    // Navbar is always visible now
-    const [isTopicsOpen, setIsTopicsOpen] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState('Topics');
-    const topics = ['Technology', 'Politics', 'Business', 'Sports', 'Entertainment', 'Health', 'Science'];
-    const dropdownRef = useRef(null);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsTopicsOpen(false);
-            }
-        };
-
-        if (isTopicsOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isTopicsOpen]);
+    const [selectedTopic, setSelectedTopic] = useState(null);
+    const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
 
     return (
         <div style={{ width: '100vw', height: '100vh', backgroundColor: '#F3F4F6', margin: 0, padding: 0, overflowY: 'auto' }}>
@@ -47,79 +27,44 @@ function ChatView({ onEnter }) {
                     margin: 0,
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
-                    color: '#1F2937'
+                    color: '#1F2937',
+                    flex: '1'
                 }}>
                     What's Poppin
                 </h1>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    {/* Custom Topics Dropdown */}
-                    <div ref={dropdownRef} style={{ position: 'relative' }}>
-                        <button
-                            onClick={() => setIsTopicsOpen(!isTopicsOpen)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                                padding: '0.5rem 0.75rem',
-                                fontSize: '1rem',
-                                borderRadius: '9999px',
-                                border: 'none',
-                                backgroundColor: 'transparent',
-                                color: '#1F2937',
-                                fontFamily: '"Roboto", sans-serif',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            {selectedTopic}
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </button>
-                        {isTopicsOpen && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '0.5rem',
-                                minWidth: '150px',
-                                backgroundColor: 'white',
-                                borderRadius: '1rem',
-                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
-                                overflow: 'hidden',
-                                zIndex: 1001
-                            }}>
-                                {topics.map((topic) => (
-                                    <div
-                                        key={topic}
-                                        onClick={() => {
-                                            setSelectedTopic(topic);
-                                            setIsTopicsOpen(false);
-                                        }}
-                                        style={{
-                                            padding: '0.75rem 1rem',
-                                            cursor: 'pointer',
-                                            fontFamily: '"Roboto", sans-serif',
-                                            fontSize: '0.9rem',
-                                            color: selectedTopic === topic ? '#3B82F6' : '#1F2937',
-                                            backgroundColor: selectedTopic === topic ? '#EFF6FF' : 'transparent',
-                                            transition: 'all 0.15s'
-                                        }}
-                                        onMouseOver={(e) => {
-                                            if (selectedTopic !== topic) e.target.style.backgroundColor = '#F3F4F6';
-                                        }}
-                                        onMouseOut={(e) => {
-                                            if (selectedTopic !== topic) e.target.style.backgroundColor = 'transparent';
-                                        }}
-                                    >
-                                        {topic}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                {/* Topic Links - Centered */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '2', justifyContent: 'center' }}>
+                    {topics.map((topic, index) => (
+                        <React.Fragment key={topic}>
+                            <span
+                                onClick={() => setSelectedTopic(topic)}
+                                style={{
+                                    fontSize: '0.95rem',
+                                    fontFamily: '"Roboto", sans-serif',
+                                    color: selectedTopic === topic ? '#3B82F6' : '#6B7280',
+                                    cursor: 'pointer',
+                                    transition: 'color 0.2s',
+                                    fontWeight: selectedTopic === topic ? '600' : '400'
+                                }}
+                                onMouseOver={(e) => {
+                                    if (selectedTopic !== topic) e.target.style.color = '#1F2937';
+                                }}
+                                onMouseOut={(e) => {
+                                    if (selectedTopic !== topic) e.target.style.color = '#6B7280';
+                                }}
+                            >
+                                {topic}
+                            </span>
+                            {index < topics.length - 1 && (
+                                <span style={{ color: '#D1D5DB', fontSize: '0.95rem' }}>/</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
 
+                {/* Globe Button - Right */}
+                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                         onClick={onEnter}
                         style={{
@@ -163,8 +108,7 @@ function ChatView({ onEnter }) {
                     letterSpacing: '1px',
                     color: '#1F2937',
                     marginBottom: '2rem',
-                    textAlign: 'center',
-                    textTransform: 'uppercase' // News headlines are often uppercase
+                    textAlign: 'center'
                 }}>
                     What's happening today?
                 </h2>
@@ -189,7 +133,7 @@ function ChatView({ onEnter }) {
                     background: 'linear-gradient(270deg, #3B82F6, #8B5CF6, #EC4899, #3B82F6)',
                     backgroundSize: '200% 200%',
                     padding: '2px',
-                    borderRadius: '9999px',
+                    borderRadius: '1.5rem',
                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                     animation: 'gradient-move 3s ease infinite',
                     transition: 'all 0.3s ease',
@@ -211,7 +155,7 @@ function ChatView({ onEnter }) {
                             padding: '1.25rem 2rem',
                             paddingRight: '4rem',
                             fontSize: '1.1rem',
-                            borderRadius: '9999px',
+                            borderRadius: '1.5rem',
                             border: 'none',
                             backgroundColor: 'rgba(255, 255, 255, 0.9)',
                             backdropFilter: 'blur(12px)',
