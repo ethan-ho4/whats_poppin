@@ -1,4 +1,19 @@
+# Web Framework
 fastapi
-uvicorn
-requests
+uvicorn[standard]
+
+# Backboard SDK for AI Assistant
+backboard
+
+# Data Processing
 pandas
+numpy
+
+# HTTP Requests
+requests
+
+# Environment Variables
+python-dotenv
+
+# Async Support (usually included with Python 3.7+, but explicit for clarity)
+asyncio

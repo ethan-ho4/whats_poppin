@@ -5,7 +5,6 @@ import { countryNews } from '../data/mockData';
 const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
     const globeEl = useRef();
     const [countries, setCountries] = useState({ features: [] });
-    const [hoverD, setHoverD] = useState(null);
 
     // Fetch country polygon data
     const newsPoints = useMemo(() => {
@@ -62,17 +61,15 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                 lineHoverPrecision={0}
 
                 polygonsData={countries.features}
-                polygonAltitude={d => d === hoverD ? 0.12 : (d.properties.ISO_A3 === selectedCountry ? 0.06 : 0.01)}
+                polygonAltitude={d => (d.properties.ISO_A3 === selectedCountry ? 0.06 : 0.01)}
                 polygonCapColor={d =>
-                    d === hoverD
-                        ? 'rgba(100, 200, 255, 0.6)'
-                        : (d.properties.ISO_A3 === selectedCountry ? 'rgba(56, 189, 248, 0.8)' : 'rgba(200, 200, 200, 0.1)')
+                    (d.properties.ISO_A3 === selectedCountry ? 'rgba(56, 189, 248, 0.8)' : 'rgba(200, 200, 200, 0.1)')
                 }
                 polygonSideColor={() => 'rgba(0, 50, 80, 0.4)'}
                 polygonStrokeColor={() => '#111'}
                 polygonLabel={getPolygonLabel}
 
-                onPolygonHover={setHoverD}
+
                 onPolygonClick={(d) => onCountrySelect(d.properties.ISO_A3, d.properties.ADMIN)}
 
                 pointsData={newsPoints}

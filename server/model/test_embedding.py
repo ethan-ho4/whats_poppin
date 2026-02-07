@@ -19,8 +19,13 @@ def test_embedding():
     # Test text to embed
     test_text = "Paris is the capital of France"
     
-    # API endpoint (trying common patterns)
-    url = "https://app.backboard.io/api/v1/embeddings"
+    # Try different possible endpoints
+    endpoints = [
+        "https://app.backboard.io/api/v1/embeddings",
+        "https://app.backboard.io/api/embeddings",
+        "https://app.backboard.io/v1/embeddings",
+        "https://api.backboard.io/v1/embeddings",
+    ]
     
     headers = {
         "x-api-key": TOKEN,
@@ -37,34 +42,46 @@ def test_embedding():
     print("Model: embed-v4.0-1024 (Cohere)")
     print("Dimensions: 1024")
     
-    try:
-        response = requests.post(url, headers=headers, json=data, timeout=10)
+    for url in endpoints:
+        print(f"\nTrying endpoint: {url}")
         
-        print(f"\nStatus Code: {response.status_code}")
-        
-        if response.status_code == 200:
-            result = response.json()
-            print(f"\n[SUCCESS] Embedding generated successfully!")
-            print(f"Response keys: {result.keys()}")
-            print(f"Full response:\n{json.dumps(result, indent=2)[:500]}...")
+        try:
+            response = requests.post(url, headers=headers, json=data, timeout=10)
             
-            # Try to extract embedding
-            if 'embedding' in result:
-                embedding = np.array(result['embedding'])
-                print(f"\nEmbedding shape: {embedding.shape}")
-                print(f"First 10 values: {embedding[:10]}")
-            elif 'data' in result and len(result['data']) > 0:
-                embedding = np.array(result['data'][0]['embedding'])
-                print(f"\nEmbedding shape: {embedding.shape}")
-                print(f"First 10 values: {embedding[:10]}")
-        else:
-            print(f"\n[ERROR] Status: {response.status_code}")
-            print(f"Response: {response.text[:500]}")
+            print(f"Status Code: {response.status_code}")
             
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
+            if response.status_code == 200:
+                result = response.json()
+                print(f"\n[SUCCESS] Found working endpoint!")
+                print(f"Endpoint: {url}")
+                print(f"Response keys: {result.keys()}")
+                print(f"Full response:\n{json.dumps(result, indent=2)[:500]}...")
+                
+                # Try to extract embedding
+                if 'embedding' in result:
+                    embedding = np.array(result['embedding'])
+                    print(f"\nEmbedding shape: {embedding.shape}")
+                    print(f"First 10 values: {embedding[:10]}")
+                    return
+                elif 'data' in result and len(result['data']) > 0:
+                    embedding = np.array(result['data'][0]['embedding'])
+                    print(f"\nEmbedding shape: {embedding.shape}")
+                    print(f"First 10 values: {embedding[:10]}")
+                    return
+            elif response.status_code == 404:
+                print(f"[NOT FOUND] Endpoint doesn't exist")
+            else:
+                print(f"[ERROR] Status: {response.status_code}")
+                print(f"Response: {response.text[:200]}")
+                
+        except Exception as e:
+            print(f"[ERROR] {e}")
+    
+    print("\n" + "="*60)
+    print("[CONCLUSION] None of the endpoints worked.")
+    print("Embeddings might not be available as a standalone API.")
+    print("They may only be used internally for RAG/document features.")
+    print("="*60)
 
 def main():
     print("="*60)
