@@ -244,22 +244,24 @@ function ChatView({ onEnter }) {
                     <style>
                         {`
                         @keyframes ticker-scroll {
-                            0% { transform: translateX(100%); }
-                            100% { transform: translateX(-100%); }
+                            0% { transform: translateX(0); }
+                            100% { transform: translateX(-50%); }
                         }
                         `}
                     </style>
                     <div style={{
                         display: 'inline-block',
-                        animation: 'ticker-scroll 90s linear infinite',
+                        animation: 'ticker-scroll 60s linear infinite',
                         color: 'white',
                         fontWeight: '600',
-                        fontSize: '1.rem',
+                        fontSize: '1rem',
                         fontFamily: '"Oswald", sans-serif',
                         letterSpacing: '1px',
                         textTransform: 'uppercase'
                     }}>
-                        BREAKING: Global markets rally as tech sector surges | UN announces new climate initiative for 2030 | Japan introduces new high-speed rail network | UK sports update: Premier League finals set for next week | US Economy shows strong growth in Q3 | New AI regulations proposed by EU commission | Space tourism flights fully booked for 2026 | 
+                        {/* Duplicate content for seamless loop */}
+                        <span>BREAKING: Global markets rally as tech sector surges | UN announces new climate initiative for 2030 | Japan introduces new high-speed rail network | UK sports update: Premier League finals set for next week | US Economy shows strong growth in Q3 | New AI regulations proposed by EU commission | Space tourism flights fully booked for 2026 | </span>
+                        <span>BREAKING: Global markets rally as tech sector surges | UN announces new climate initiative for 2030 | Japan introduces new high-speed rail network | UK sports update: Premier League finals set for next week | US Economy shows strong growth in Q3 | New AI regulations proposed by EU commission | Space tourism flights fully booked for 2026 | </span>
                     </div>
                 </div>
             </div>
