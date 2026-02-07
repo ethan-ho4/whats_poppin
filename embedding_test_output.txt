@@ -1,0 +1,91 @@
+﻿============================================================
+BACKBOARD EMBEDDING MODEL TEST
+============================================================
+Token loaded successfully: espr_...
+
+Test text: 'Paris is the capital of France'
+
+Generating embedding...
+Model: embed-v4.0-1024 (Cohere)
+Dimensions: 1024
+
+Status Code: 404
+python : Traceback (most 
+recent call last):
+At line:1 char:1
++ python server/model/test_
+embedding.py 2>&1 | 
+Out-File -Encoding utf8  
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (Tra  
+  ceback (most recent ca   
+ ll last)::String) [],     
+RemoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+  File "C:\Users\ethan\Desk
+top\projects\whats_poppin\s
+erver\model\test_embedding.
+py", line 61, in 
+test_embedding
+    print(f"\n\u274c 
+Error: 
+{response.status_code}")
+  File "C:\Users\ethan\AppD
+ata\Local\Programs\Python\P
+ython311\Lib\encodings\cp12
+52.py", line 19, in encode
+    return codecs.charmap_e
+ncode(input,self.errors,enc
+oding_table)[0]
+           ^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character '\u274c' 
+in position 2: character 
+maps to <undefined>
+
+During handling of the 
+above exception, another 
+exception occurred:
+
+Traceback (most recent 
+call last):
+  File "C:\Users\ethan\Desk
+top\projects\whats_poppin\s
+erver\model\test_embedding.
+py", line 77, in <module>
+    main()
+  File "C:\Users\ethan\Desk
+top\projects\whats_poppin\s
+erver\model\test_embedding.
+py", line 74, in main
+    test_embedding()
+  File "C:\Users\ethan\Desk
+top\projects\whats_poppin\s
+erver\model\test_embedding.
+py", line 65, in 
+test_embedding
+    print(f"\n\u274c 
+Error: {e}")
+  File "C:\Users\ethan\AppD
+ata\Local\Programs\Python\P
+ython311\Lib\encodings\cp12
+52.py", line 19, in encode
+    return codecs.charmap_e
+ncode(input,self.errors,enc
+oding_table)[0]
+           ^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character '\u274c' 
+in position 2: character 
+maps to <undefined>
