@@ -1,11 +1,31 @@
 from fastapi import FastAPI
 import uvicorn
 
+import pandas as pd
+import os
+
 app = FastAPI()
+
+from fastapi.responses import Response
+import json
+
+# Get the directory of the current script to locate the CSV. 
+# Identifying the parent directory where live_news.csv is located (one level up from server/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CSV_PATH = os.path.join(BASE_DIR, "live_news.csv")
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    if os.path.exists(CSV_PATH):
+        try:
+            df = pd.read_csv(CSV_PATH)
+            # Convert NaN to None for valid JSON
+            df = df.where(pd.notnull(df), None)
+            data = df.to_dict(orient="records")
+            return Response(content=json.dumps(data, indent=4), media_type="application/json")
+        except Exception as e:
+            return {"error": str(e)}
+    return {"error": "File not found"}
 
 @app.get("/news")
 def get_news(filter: str = None):
