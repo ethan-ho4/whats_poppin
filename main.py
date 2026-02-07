@@ -1,61 +1,82 @@
 
-import argparse
+import requests
 import pandas as pd
-from gdelt_client import GDELTClient
+import io
+import time
+import zipfile
+from datetime import datetime
 
-def fetch_and_translate_global_news(limit: int = 100, custom_query: str = None):
-    """
-    Fetches news from the last hour and translates them to English.
-    If no custom_query is provided, fetches ALL news (tone>-100).
-    """
-    client = GDELTClient()
-    timespan = "1 hour"
-    
-    # Use provided query or default to "global" catch-all
-    query = custom_query if custom_query else "tone>-100"
-    query_display = custom_query if custom_query else "All Topics (Global)"
-    
-    print(f"Starting News Pipeline...")
-    print(f"- Time Window: Last {timespan}")
-    print(f"- Query: {query_display}")
-    print(f"- Translation: ENABLED")
-    print(f"- Max Records: {limit}")
-    
+# GDELT 2.0 Global Knowledge Graph (GKG) Translation List
+MASTER_URL = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
+ARCHIVE_FILE = "live_news.csv"
+
+def get_latest_gkg_url():
+    """Fetches the latest GKG file URL from the master list."""
     try:
-        # Fetch data with translation enabled
-        df = client.search(
-            query=query, 
-            timespan=timespan, 
-            max_records=limit, 
-            translate=True
-        )
+        r = requests.get(MASTER_URL)
+        r.raise_for_status()
         
-        if not df.empty:
-            print(f"\nSuccess! Retrieved {len(df)} articles.")
-            
-            # Select relevant columns primarily
-            cols = ['seendate', 'title', 'url', 'sourcecountry', 'language']
-            available_cols = [c for c in cols if c in df.columns]
-            
-            # Use all available cols if specific ones aren't found, but maintain order if they are
-            final_cols = available_cols if available_cols else df.columns
-            
-            # Save to CSV
-            output_file = "news_results_translated.csv"
-            df[final_cols].to_csv(output_file, index=False, encoding='utf-8')
-            print(f"\nFull results saved to: {output_file}")
-            
-        else:
-            print("No articles found.")
-            
+        lines = r.text.strip().split('\n')
+        # Iterate backwards to find latest GKG zip
+        for line in reversed(lines):
+            parts = line.split()
+            if len(parts) >= 3 and "gkg.csv.zip" in parts[2]:
+                return parts[2]
+        return None
     except Exception as e:
-        print(f"Pipeline Error: {e}")
+        print(f"Error fetching master list: {e}")
+        return None
+
+def process_gkg_file(url):
+    """Downloads and extracts relevant news metadata."""
+    print(f"Downloading update from: {url}")
+    try:
+        r = requests.get(url)
+        r.raise_for_status()
+        
+        # Determine column structure (GKG 2.0 has no headers)
+        # Using specific columns for efficiency:
+        # 1: DATE, 3: SOURCE, 4: URL, 7: TONE, 9: PERSONS, 11: ORGS, 15: LOCATIONS
+        df = pd.read_csv(io.BytesIO(r.content), compression='zip', sep='\t', header=None, 
+                         usecols=[1, 3, 4, 7, 9, 11, 15], 
+                         names=['date', 'source_name', 'url', 'tone', 'persons', 'organizations', 'locations'],
+                         encoding='latin-1', on_bad_lines='skip')
+                         
+        print(f"Extracted {len(df)} rows.")
+        return df
+    except Exception as e:
+        print(f"Error processing file: {e}")
+        return pd.DataFrame()
+
+def run_pipeline():
+    last_processed_url = None
+    
+    print("--- Starting GDELT 15-Minute Mass News Pipeline ---")
+    print(f"Saving to: {ARCHIVE_FILE}")
+    print("---------------------------------------------------")
+    
+    while True:
+        url = get_latest_gkg_url()
+        
+        if url and url != last_processed_url:
+            print(f"\n[{datetime.now().strftime('%H:%M:%S')}] New update detected!")
+            df = process_gkg_file(url)
+            
+            if not df.empty:
+                # Append to master CSV
+                header = not pd.io.common.file_exists(ARCHIVE_FILE)
+                df.to_csv(ARCHIVE_FILE, mode='a', header=header, index=False)
+                print(f"Success. Appended {len(df)} rows to {ARCHIVE_FILE}")
+                last_processed_url = url
+            else:
+                print("Update was empty or failed.")
+        else:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] No new update yet. Waiting...")
+            
+        time.sleep(60) # Check every minute
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fetch and translate news pipeline.")
-    parser.add_argument("--limit", type=int, default=100, help="Number of articles (default: 100)")
-    parser.add_argument("--query", type=str, help="Specific topic/query (e.g. 'bitcoin', 'france'). Defaults to ALL global news.")
-    
-    args = parser.parse_args()
-    
-    fetch_and_translate_global_news(limit=args.limit, custom_query=args.query)
+    try:
+        run_pipeline()
+    except KeyboardInterrupt:
+        print("\nStopping pipeline.")

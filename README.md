@@ -1,39 +1,34 @@
-# Global News Translation Pipeline
+# Global News Mass Pipeline
 
-*What's happening in the world?*
+This project implements a pipeline to **bulk download all new global news** every 15 minutes as it is released by GDELT.
 
-This project implements a pipeline to fetch **all global news** from the last hour and **translate** it into English.
+## How it works
 
-## Files
-
-- `main.py`: The entry point script. Runs the pipeline.
-- `gdelt_client.py`: The client library for interacting with the GDELT API.
-- `news_results_translated.csv`: Valid output file containing the translated news.
+1.  **Monitors**: Checks the GDELT 2.0 Master File List every minute.
+2.  **Downloads**: When a new 15-minute update is released (containing ~2k-5k articles), it downloads the zip file directly.
+3.  **Extracts**: It processes the Global Knowledge Graph (GKG) file to extract news metadata (Source, Tone, Persons, Organizations).
+4.  **Updates**: It appends *everything* to a single master CSV file: `15_mass.csv`.
 
 ## Usage
 
-1. **Install Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+1.  **Install Dependencies**:
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-2. **Run Pipeline**:
-   ```bash
-   python main.py
-   ```
-
-   **Options**:
-   - `--limit [number]`: Specify the number of articles to retrieve (default: 100).
-     ```bash
-     python main.py --limit 500
-     ```
-   - `--query [topic]`: Specify a topic (e.g., "SpaceX").
+2.  **Run the Pipeline**:
+    ```bash
+    python main.py
+    ```
+    Leave this running in the background.
 
 ## Output
 
-The script saves the results to `news_results_translated.csv` with the following columns:
-- `seendate`
-- `title` (Translated English)
+The file `15_mass.csv` will grow continuously. Columns include:
+- `date`
+- `source_name`
 - `url`
-- `sourcecountry`
-- `language`
+- `tone`
+- `persons`
+- `organizations`
+- `locations`
