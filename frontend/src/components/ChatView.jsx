@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import ParticleWave from './ParticleWave';
+
+
 
 function ChatView({ onEnter, onTopicSelect }) {
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [query, setQuery] = useState('');
     const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
 
     const handleTopicClick = (topic) => {
@@ -64,7 +68,10 @@ function ChatView({ onEnter, onTopicSelect }) {
     };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#0a0b0f', margin: 0, padding: 0, overflowY: 'auto' }}>
+        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#0a0b0f', margin: 0, padding: 0, overflowY: 'auto', position: 'relative' }}>
+            {/* Particle Wave Background */}
+            <ParticleWave />
+            
             {/* Navbar */}
             {/* Navbar */}
             <nav style={{
@@ -172,7 +179,7 @@ function ChatView({ onEnter, onTopicSelect }) {
             }}>
                 <h2 style={{
                     fontFamily: '"Moon", sans-serif',
-                    fontSize: '11rem',
+                    fontSize: 'clamp(3rem, 8vw, 11rem)',
                     fontWeight: '300',
                     letterSpacing: '3px',
                     color: 'white',
@@ -209,7 +216,9 @@ function ChatView({ onEnter, onTopicSelect }) {
                     borderRadius: '1.5rem',
                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
                     animation: 'gradient-move 3s ease infinite',
-                    overflow: 'hidden'
+                    transform: isFocused ? 'scale(1.15)' : 'scale(1)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    zIndex: 10
                 }}
                 >
                     <input
@@ -217,6 +226,8 @@ function ChatView({ onEnter, onTopicSelect }) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
                         autoFocus
                         placeholder="Ask about global news, trends, or specific countries..."
                         style={{
