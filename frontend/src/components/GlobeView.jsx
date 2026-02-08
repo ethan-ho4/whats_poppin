@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Search, MapPin, Globe, LayoutGrid, X, MessageSquare, Menu, Terminal, Layers, Info } from 'lucide-react';
 import GlobeViewer from './GlobeViewer';
-// NewsPanel import removed as we are inlining the custom overlay
-import { countryNews } from '../data/mockData';
-import { Info, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import ChatView from './ChatView';
+import { fipsToIso3 } from '../utils/countryMapping';
 
 const getFlagUrl = (iso3) => {
     if (!iso3) return '';
@@ -27,6 +27,7 @@ function GlobeView({ onBackToHome }) {
     const [showNavbar, setShowNavbar] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(null);
+    const [activeNewsPoints, setActiveNewsPoints] = useState([]);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
@@ -38,7 +39,9 @@ function GlobeView({ onBackToHome }) {
             .then(response => response.json())
             .then(newsData => {
                 console.log('News loaded for', topic, newsData);
-                // TODO: Update globe pins based on filtered news
+                // Filter articles that have valid coordinates for the globe
+                const points = newsData.filter(article => article.lat && (article.lon || article.lng));
+                setActiveNewsPoints(points);
             })
             .catch(error => {
                 console.error('Error fetching news:', error);
@@ -107,6 +110,7 @@ function GlobeView({ onBackToHome }) {
                 <GlobeViewer
                     onCountrySelect={handleCountrySelect}
                     selectedCountry={selectedCountry}
+                    dynamicPoints={activeNewsPoints}
                 />
             </div>
 
@@ -363,40 +367,69 @@ function GlobeView({ onBackToHome }) {
                             <div style={{ color: 'white', fontWeight: 'bold', fontSize: '2rem', textAlign: 'left', lineHeight: '1.1', textTransform: 'uppercase' }}>
                                 {countryName || selectedCountry}
                             </div>
-                            <div className="text-sm text-white/70 mt-2 font-mono">ISO: {selectedCountry}</div>
                         </div>
 
-                        <div className="mt-8 w-full pr-2" style={{ pointerEvents: 'auto' }}>
-                            {countryNews[selectedCountry]?.length > 0 ? (
-                                <div className="pb-6 w-full">
-                                    {countryNews[selectedCountry].map(article => (
-                                        <div 
-                                            key={article.id} 
-                                            className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer w-full" 
-                                            style={{ border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '1rem 1rem 1rem 1.75rem', marginBottom: '1.5rem' }}
-                                            onClick={() => article.url && window.open(article.url, '_blank')}
-                                        >
-                                            <h3 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors leading-tight mb-2">
-                                                {article.title}
-                                            </h3>
-                                            {article.summary && (
-                                                <p className="text-xs text-white/70 line-clamp-3 leading-relaxed mb-3">
-                                                    {article.summary}
-                                                </p>
-                                            )}
-                                            {article.url && (
-                                                <div className="text-[10px] text-white/40 truncate font-mono">
-                                                    {article.url}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-white/40 text-sm italic text-center mt-10">
-                                    No news articles found.
-                                </div>
-                            )}
+                        <div className="w-full pr-2" style={{ pointerEvents: 'auto', marginTop: '1.5rem' }}>
+                            {(() => {
+                                const displayNews = activeNewsPoints.filter(article => {
+                                    const mappedIso = fipsToIso3[article.country_code];
+                                    return mappedIso === selectedCountry || 
+                                           article.country_code === selectedCountry ||
+                                           article.country?.toLowerCase().includes(countryName?.toLowerCase());
+                                });
+
+                                return displayNews.length > 0 ? (
+                                    <div className="pb-6 w-full">
+                                        {displayNews.map(article => (
+                                            <div 
+                                                key={article.id} 
+                                                className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer w-full break-words whitespace-normal" 
+                                                style={{ 
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)', 
+                                                    borderRadius: '12px', 
+                                                    padding: '1rem 1rem 1rem 1.75rem', 
+                                                    marginBottom: '1.5rem',
+                                                    boxSizing: 'border-box',
+                                                    overflowWrap: 'break-word',
+                                                    wordBreak: 'break-word'
+                                                }}
+                                                onClick={() => article.url && window.open(article.url, '_blank')}
+                                            >
+                                                <a 
+                                                    href={article.url} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    style={{ 
+                                                        textDecoration: 'none',
+                                                        color: 'rgba(255, 255, 255, 0.9)',
+                                                        transition: 'color 0.2s ease-in-out',
+                                                        display: 'block'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)'}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <h3 
+                                                        className="text-sm font-bold leading-tight mb-2"
+                                                        style={{ color: 'inherit' }}
+                                                    >
+                                                        {article.title}
+                                                    </h3>
+                                                </a>
+                                                {article.summary && (
+                                                    <p className="text-xs text-white/70 leading-relaxed mb-1">
+                                                        {article.summary}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-white/40 text-sm italic text-center mt-10">
+                                        No news articles found for this location.
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </motion.div>
                 )}

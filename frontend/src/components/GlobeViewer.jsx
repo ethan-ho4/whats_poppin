@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
-import { countryNews } from '../data/mockData';
 import * as THREE from 'three';
+import { fipsToIso3 } from '../utils/countryMapping';
 
-const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
+const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) => {
     const globeEl = useRef();
     const [countries, setCountries] = useState({ features: [] });
     const [hoverD, setHoverD] = useState(null);
     const [visibleData, setVisibleData] = useState([]);
-
+    
     // New state for the "No Articles Found" message
     const [showNoDataMessage, setShowNoDataMessage] = useState(false);
 
@@ -17,25 +17,39 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
     <div style="background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; color: white;">
       <b>${d.properties.ADMIN}</b> (${d.properties.ISO_A3})
       <br />
-      ${countryNews[d.properties.ISO_A3] ? 'Click for news' : 'No news available'}
+      Click for news
     </div>
   `;
+
+    const allPointsRef = useRef([]);
 
     // Memoize all points and top points
     const { allPoints, topPoints } = useMemo(() => {
         const all = [];
-        const top = [];
-        Object.entries(countryNews).forEach(([isoCode, articles]) => {
-            articles.forEach((article, index) => {
-                if (article.lat && article.lng) {
-                    const point = { ...article, isoCode };
-                    all.push(point);
-                    if (index === 0) top.push(point);
-                }
-            });
+
+        // 1. Process Dynamic Data from API
+        dynamicPoints.forEach((article) => {
+            const lat = article.lat;
+            const lng = article.lng || article.lon;
+            
+            if (lat !== undefined && lng !== undefined) {
+                // Map GDELT FIPS code to ISO-A3
+                const fips = article.country_code;
+                const isoCode = fipsToIso3[fips] || 'DYNAMIC';
+
+                all.push({
+                    ...article,
+                    lat,
+                    lng,
+                    locationLabels: article.country || 'Unknown Location',
+                    isoCode: isoCode
+                });
+            }
         });
-        return { allPoints: all, topPoints: top };
-    }, []);
+
+        allPointsRef.current = all;
+        return { allPoints: all, topPoints: all };
+    }, [dynamicPoints]);
 
     // Helper to calculate distance
     const getDistance = (lat1, lng1, lat2, lng2) => {
@@ -58,23 +72,15 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
 
         const { lat, lng, altitude } = globeEl.current.pointOfView();
 
+        const ZOOM_THRESHOLD = 1.5; 
+        const VIEW_ANGLE_FACTOR = 0.6; 
 
-        // Thresholds
-        const ZOOM_THRESHOLD = 1.5; // Altitude below which we show detail
-        const VIEW_ANGLE_FACTOR = 0.6; // Multiplier for field of view based on altitude
+        // Always use the latest points from the Ref to avoid stale closure
+        const candidates = allPointsRef.current;
 
-        const isZoomedOut = altitude > ZOOM_THRESHOLD;
-        // Always show all points for now to ensure users see the city spread
-        const candidates = allPoints;
+        let maxAngle = Math.min(Math.PI / 2, altitude * VIEW_ANGLE_FACTOR + 0.3); 
 
-        // Calculate visible cap
-        // Horizon is acos(1 / (1 + alt)), but we want a tighter cone for culling "not in view"
-        // Approximate visible angle based on altitude (smaller altitude = smaller visible patch)
-        // Max angle is PI/2 (hemisphere)
-        let maxAngle = Math.min(Math.PI / 2, altitude * VIEW_ANGLE_FACTOR + 0.3); // +0.3 base field of view
-
-        if (isZoomedOut) {
-            // When zoomed out, show more of the globe features
+        if (altitude > ZOOM_THRESHOLD) {
             maxAngle = Math.PI / 1.5;
         }
 
@@ -86,12 +92,12 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
         setVisibleData(filtered);
     };
 
-    // Initial load of countries
+    // Initial load and point updates
     useEffect(() => {
+        // ... (fetch logic remains same) ...
         fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
             .then(res => res.json())
             .then(data => {
-                // Fix missing ISO codes for specific countries
                 data.features.forEach(f => {
                     if (f.properties.ISO_A3 === '-99') {
                         switch (f.properties.ADMIN) {
@@ -105,13 +111,11 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                 setCountries(data);
             });
 
-        // Initial point update and zoom position
-        // We need a small delay or check until globe is ready, but typically pointOfView has default
         if (globeEl.current) {
-            // Set initial view to be closer (bigger globe)
             globeEl.current.pointOfView({ altitude: 1.7 });
         }
 
+        // Initialize visible data
         setVisibleData(topPoints);
     }, [topPoints]);
 
@@ -464,7 +468,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                 pointLat="lat"
                 pointLng="lng"
                 pointColor={() => '#ef4444'}
-                pointAltitude={0.07}
+                pointAltitude={0.02}
                 pointRadius={0.4}
                 pointLabel={d => `
                         <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2);">
