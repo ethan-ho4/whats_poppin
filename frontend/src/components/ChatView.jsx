@@ -17,7 +17,7 @@ function ChatView({ onEnter, onTopicSelect }) {
         onEnter();
 
         // Fetch data in background (non-blocking)
-        fetch(`http://localhost:8000/news?filter=${encodeURIComponent(topic)}`)
+        fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
             .then(response => response.json())
             .then(newsData => {
                 // Data will be available for GlobeView to use

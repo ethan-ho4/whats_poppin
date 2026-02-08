@@ -37,16 +37,30 @@ def read_root():
             return {"error": str(e)}
     return {"error": "File not found"}
 
+
+from server.db_handle.search_articles import search_articles
+
 @app.get("/news")
-def get_news(filter: str = None):
-    news_items = [
-        {"id": 1, "title": "Tech News: Python 4.0 Released?", "category": "Tech"},
-        {"id": 2, "title": "Global: World Peace Achieved", "category": "World"},
-        {"id": 3, "title": "Sports: Local Team Wins Again", "category": "Sports"}
-    ]
-    if filter:
-        return [item for item in news_items if filter.lower() in item["category"].lower() or filter.lower() in item["title"].lower()]
-    return news_items
+def get_news(query: str = None, count: int = 1000, threshold: float = 0.3):
+    """
+    Get news articles. 
+    If query is provided, performs a vector search.
+    Otherwise returns a default list (or could return latest news).
+    """
+    if query:
+        print(f"Searching for: {query}")
+        try:
+            results = search_articles(query, match_threshold=threshold, match_count=count)
+            return results
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"Error during search: {e}")
+            return {"error": str(e), "traceback": tb}
+            
+    # Default behavior: Return empty list if no query provided
+    return []
+
 
 from server.main_functions import handle_chat
 

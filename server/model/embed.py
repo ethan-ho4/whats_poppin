@@ -1,3 +1,8 @@
+import os
+
+# Disable TQDM progress bars to prevent [Errno 22] Invalid argument in server context
+os.environ["TQDM_DISABLE"] = "1"
+
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
