@@ -6,65 +6,56 @@ import ParticleWave from './ParticleWave';
 function ChatView({ onEnter, onTopicSelect }) {
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [query, setQuery] = useState('');
+    const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
 
-    const handleTopicClick = async (topic) => {
+    const handleTopicClick = (topic) => {
         setSelectedTopic(topic);
 
-        try {
-            // Fetch data before navigating
-            const response = await fetch(`http://localhost:8001/news?query=${encodeURIComponent(topic)}`);
-            const data = await response.json();
-            console.log('News loaded for', topic, data);
-
-            // Pass data to App.jsx -> GlobeView.jsx
-            if (onTopicSelect) {
-                onTopicSelect(topic, data);
-            }
-
-            // Navigate after data is ready
-            onEnter();
-        } catch (error) {
-            console.error('Error fetching news:', error);
+        // Navigate immediately
+        if (onTopicSelect) {
+            onTopicSelect(topic);
         }
+        onEnter();
+
+        // Fetch data in background (non-blocking)
+        fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Data will be available for GlobeView to use
+                // The new structure is array: [{ title, url, ... }, ...]
+                console.log('News loaded for', topic, data);
+            })
+            .catch(error => {
+                console.error('Error fetching news:', error);
+            });
     };
 
     const handleSearch = async () => {
         if (!query.trim()) return;
 
         setLoading(true);
+        setResponse(null);
         try {
             // Updated to use /news endpoint which now returns a list of articles directly
-            const res = await fetch(`http://localhost:8001/news?query=${encodeURIComponent(query)}`);
+            const res = await fetch(`http://localhost:8000/news?query=${encodeURIComponent(query)}`);
             const data = await res.json();
             console.log("News results JSON:", data);
-            console.log("Is Array:", Array.isArray(data));
-            console.log("Length:", data ? data.length : "N/A");
 
-            // Navigate if results found
+            // Format response for display
+            // data is now an array: [{ title, url, ... }, ...]
             if (Array.isArray(data) && data.length > 0) {
-                console.log("Results found, attempting navigation...");
-                if (onTopicSelect) {
-                    console.log("Calling onTopicSelect");
-                    onTopicSelect(query, data);
-                } else {
-                    console.log("onTopicSelect is missing");
-                }
-
-                if (onEnter) {
-                    console.log("Calling onEnter");
-                    onEnter();
-                } else {
-                    console.error("onEnter prop is missing!");
-                }
+                const count = data.length;
+                setResponse(`Found ${count} articles for "${query}". Top result: ${data[0].title}`);
             } else {
-                console.log(`No articles found for "${query}".`);
+                setResponse(`No articles found for "${query}".`);
             }
 
         } catch (error) {
             console.error("Error fetching news:", error);
+            setResponse("Error connecting to server.");
         } finally {
             setLoading(false);
         }
@@ -334,6 +325,29 @@ function ChatView({ onEnter, onTopicSelect }) {
                         </button>
                     ))}
                 </div>
+
+                {/* Response Area */}
+                {response && (
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '1.5rem',
+                        backgroundColor: '#1F2937',
+                        borderRadius: '1rem',
+                        boxShadow: '0 4px 6px -1px rgba(255, 255, 255, 0.1)',
+                        maxWidth: '800px',
+                        width: '100%',
+                        animation: 'fadeIn 0.5s ease-out'
+                    }}>
+                        <h3 style={{ margin: '0 0 0.5rem 0', color: 'white', fontSize: '1.1rem' }}>Fuzzy Search Result:</h3>
+                        <p style={{ margin: 0, color: '#D1D5DB', lineHeight: '1.5' }}>{response}</p>
+                    </div>
+                )}
+                <style>{`
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}</style>
 
                 {/* News Ticker */}
                 <div style={{

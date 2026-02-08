@@ -21,36 +21,21 @@ const getFlagUrl = (iso3) => {
     return `https://flagcdn.com/w160/${iso2}.png`;
 };
 
-function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews }) {
+function GlobeView({ onBackToHome }) {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState(initialTopic);
+    const [selectedTopic, setSelectedTopic] = useState(null);
     const [activeNewsPoints, setActiveNewsPoints] = useState([]);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
-    // Initialize/Update points from props
-    useEffect(() => {
-        if (filteredNews && Array.isArray(filteredNews)) {
-            const points = filteredNews.filter(article => article.lat && (article.lon || article.lng));
-            setActiveNewsPoints(points);
-        }
-    }, [filteredNews]);
-
-    // Update topic if prop changes
-    useEffect(() => {
-        if (initialTopic) {
-            setSelectedTopic(initialTopic);
-        }
-    }, [initialTopic]);
-
     const handleTopicClick = (topic) => {
         setSelectedTopic(topic);
-
+        
         // Fetch news with topic filter
-        fetch(`http://localhost:8001/news?query=${encodeURIComponent(topic)}`)
+        fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
             .then(response => response.json())
             .then(newsData => {
                 console.log('News loaded for', topic, newsData);
@@ -361,7 +346,7 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews }) 
                         <button
                             onClick={handleClosePanel}
                             className="p-2 text-white/70 hover:text-white transition-colors z-50 cursor-pointer"
-                            style={{
+                            style={{ 
                                 pointerEvents: 'auto',
                                 position: 'absolute',
                                 top: '1.5rem',
@@ -388,21 +373,21 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews }) 
                             {(() => {
                                 const displayNews = activeNewsPoints.filter(article => {
                                     const mappedIso = fipsToIso3[article.country_code];
-                                    return mappedIso === selectedCountry ||
-                                        article.country_code === selectedCountry ||
-                                        article.country?.toLowerCase().includes(countryName?.toLowerCase());
+                                    return mappedIso === selectedCountry || 
+                                           article.country_code === selectedCountry ||
+                                           article.country?.toLowerCase().includes(countryName?.toLowerCase());
                                 });
 
                                 return displayNews.length > 0 ? (
                                     <div className="pb-6 w-full">
                                         {displayNews.map(article => (
-                                            <div
-                                                key={article.id}
-                                                className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer w-full break-words whitespace-normal"
-                                                style={{
-                                                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                                                    borderRadius: '12px',
-                                                    padding: '1rem 1rem 1rem 1.75rem',
+                                            <div 
+                                                key={article.id} 
+                                                className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer w-full break-words whitespace-normal" 
+                                                style={{ 
+                                                    border: '1px solid rgba(255, 255, 255, 0.2)', 
+                                                    borderRadius: '12px', 
+                                                    padding: '1rem 1rem 1rem 1.75rem', 
                                                     marginBottom: '1.5rem',
                                                     boxSizing: 'border-box',
                                                     overflowWrap: 'break-word',
@@ -410,11 +395,11 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews }) 
                                                 }}
                                                 onClick={() => article.url && window.open(article.url, '_blank')}
                                             >
-                                                <a
-                                                    href={article.url}
-                                                    target="_blank"
+                                                <a 
+                                                    href={article.url} 
+                                                    target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    style={{
+                                                    style={{ 
                                                         textDecoration: 'none',
                                                         color: 'rgba(255, 255, 255, 0.9)',
                                                         transition: 'color 0.2s ease-in-out',
@@ -424,7 +409,7 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews }) 
                                                     onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)'}
                                                     onClick={(e) => e.stopPropagation()}
                                                 >
-                                                    <h3
+                                                    <h3 
                                                         className="text-sm font-bold leading-tight mb-2"
                                                         style={{ color: 'inherit' }}
                                                     >
