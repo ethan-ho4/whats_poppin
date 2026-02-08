@@ -89,7 +89,7 @@ function ChatView({ onEnter, onTopicSelect }) {
                                 style={{
                                     fontSize: '0.95rem',
                                     fontFamily: '"Roboto", sans-serif',
-                                    color: selectedTopic === topic ? '#3B82F6' : '#6B7280',
+                                    color: selectedTopic === topic ? '#1F2937' : '#6B7280',
                                     cursor: 'pointer',
                                     transition: 'color 0.2s',
                                     fontWeight: selectedTopic === topic ? '600' : '400'

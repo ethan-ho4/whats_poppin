@@ -26,8 +26,24 @@ function GlobeView({ onBackToHome }) {
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
+    const [selectedTopic, setSelectedTopic] = useState(null);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
+
+    const handleTopicClick = (topic) => {
+        setSelectedTopic(topic);
+        
+        // Fetch news with topic filter
+        fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
+            .then(response => response.json())
+            .then(newsData => {
+                console.log('News loaded for', topic, newsData);
+                // TODO: Update globe pins based on filtered news
+            })
+            .catch(error => {
+                console.error('Error fetching news:', error);
+            });
+    };
 
     const handleCountrySelect = (isoCode, name) => {
         setSelectedCountry(isoCode);
@@ -131,19 +147,20 @@ function GlobeView({ onBackToHome }) {
                     {['Technology', 'Business', 'Sports', 'Entertainment', 'Science'].map((topic, index, arr) => (
                         <React.Fragment key={topic}>
                             <span
+                                onClick={() => handleTopicClick(topic)}
                                 style={{
                                     fontSize: '0.95rem',
                                     fontFamily: '"Roboto", sans-serif',
-                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    color: selectedTopic === topic ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
                                     cursor: 'pointer',
                                     transition: 'color 0.2s',
-                                    fontWeight: '400'
+                                    fontWeight: selectedTopic === topic ? '600' : '400'
                                 }}
                                 onMouseOver={(e) => {
-                                    e.target.style.color = 'white';
+                                    if (selectedTopic !== topic) e.target.style.color = 'white';
                                 }}
                                 onMouseOut={(e) => {
-                                    e.target.style.color = 'rgba(255, 255, 255, 0.7)';
+                                    if (selectedTopic !== topic) e.target.style.color = 'rgba(255, 255, 255, 0.7)';
                                 }}
                             >
                                 {topic}
@@ -297,32 +314,41 @@ function GlobeView({ onBackToHome }) {
                         className="custom-scrollbar"
                         style={{
                             position: 'fixed',
-                            top: 0,
+                            top: '70px',
                             left: 0,
                             width: '25vw',
-                            height: '100vh',
-                            background: 'rgba(20, 20, 35, 0.7)',
-                            backdropFilter: 'blur(20px)',
-                            WebkitBackdropFilter: 'blur(20px)',
-                            borderRadius: 0,
-                            zIndex: 999999,
+                            height: 'calc(100vh - 70px)',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(20px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                            borderRadius: '0 1.5rem 1.5rem 0',
+                            zIndex: 50,
                             pointerEvents: 'auto',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'flex-start',
                             justifyContent: 'flex-start',
                             padding: '2rem',
-                            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                            borderRight: '1px solid rgba(255, 255, 255, 0.5)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.5)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
                             boxShadow: '0 0 50px rgba(0,0,0,0.5)',
                             overflowY: 'auto',
                             overflowX: 'hidden',
-                            boxSizing: 'border-box'
+                            boxSizing: 'border-box',
+                            padding: '2rem'
                         }}>
 
                         <button
                             onClick={handleClosePanel}
-                            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-50 cursor-pointer"
-                            style={{ pointerEvents: 'auto' }}
+                            className="p-2 text-white/70 hover:text-white transition-colors z-50 cursor-pointer"
+                            style={{ 
+                                pointerEvents: 'auto',
+                                position: 'absolute',
+                                top: '1.5rem',
+                                right: '1.5rem',
+                                color: 'white'
+                            }}
                         >
                             <X size={24} />
                         </button>
@@ -342,20 +368,27 @@ function GlobeView({ onBackToHome }) {
 
                         <div className="mt-8 w-full pr-2" style={{ pointerEvents: 'auto' }}>
                             {countryNews[selectedCountry]?.length > 0 ? (
-                                <div className="space-y-4 pb-4">
+                                <div className="pb-6 w-full">
                                     {countryNews[selectedCountry].map(article => (
-                                        <div key={article.id} className="bg-black/20 p-4 rounded-lg border border-white/10 hover:bg-black/30 transition-colors group cursor-pointer overflow-hidden">
-                                            <div className="flex justify-between items-start gap-2 mb-2">
-                                                <h3 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors leading-tight">
-                                                    {article.title}
-                                                </h3>
-                                                <div className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-white/60 shrink-0 whitespace-nowrap">
-                                                    {article.source}
+                                        <div 
+                                            key={article.id} 
+                                            className="bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer w-full" 
+                                            style={{ border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '12px', padding: '1rem 1rem 1rem 1.75rem', marginBottom: '1.5rem' }}
+                                            onClick={() => article.url && window.open(article.url, '_blank')}
+                                        >
+                                            <h3 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors leading-tight mb-2">
+                                                {article.title}
+                                            </h3>
+                                            {article.summary && (
+                                                <p className="text-xs text-white/70 line-clamp-3 leading-relaxed mb-3">
+                                                    {article.summary}
+                                                </p>
+                                            )}
+                                            {article.url && (
+                                                <div className="text-[10px] text-white/40 truncate font-mono">
+                                                    {article.url}
                                                 </div>
-                                            </div>
-                                            <p className="text-xs text-white/70 line-clamp-3 leading-relaxed">
-                                                {article.summary}
-                                            </p>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
