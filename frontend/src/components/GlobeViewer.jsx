@@ -188,6 +188,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
     }, []);
 
     const userLocationRef = useRef(null);
+    const isAnimatingRef = useRef(false);
 
     // Geolocation and 'c', 's', 'a' key listener
     useEffect(() => {
@@ -252,6 +253,8 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
 
             // 'a' key: Accelerate spin, zoom out, then look into space
             if (key === 'a') {
+                if (isAnimatingRef.current) return;
+                isAnimatingRef.current = true;
                 setShowNoDataMessage(false); // Reset message at start
                 if (globeEl.current) {
                     const controls = globeEl.current.controls();
@@ -306,6 +309,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                             if (progress < 1) {
                                 requestAnimationFrame(animateAll);
                             } else {
+                                isAnimatingRef.current = false;
                                 controls.enabled = false;
                                 controls.autoRotate = false;
                                 // Animation complete - SHOW MESSAGE
@@ -319,6 +323,8 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
 
             // SPACE key: Return to Earth (Smooth Transition)
             if (key === ' ') {
+                if (isAnimatingRef.current) return;
+                isAnimatingRef.current = true;
                 if (globeEl.current) {
                     setShowNoDataMessage(false);
                     const controls = globeEl.current.controls();
@@ -373,6 +379,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                                 requestAnimationFrame(animateReturn);
                             } else {
                                 // Animation complete
+                                isAnimatingRef.current = false;
                                 controls.enabled = true;
                                 controls.autoRotate = true;
                                 controls.autoRotateSpeed = 0.35;
