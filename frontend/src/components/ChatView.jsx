@@ -19,9 +19,10 @@ function ChatView({ onEnter, onTopicSelect }) {
         // Fetch data in background (non-blocking)
         fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
             .then(response => response.json())
-            .then(newsData => {
+            .then(data => {
                 // Data will be available for GlobeView to use
-                console.log('News loaded for', topic, newsData);
+                // The new structure is array: [{ title, url, ... }, ...]
+                console.log('News loaded for', topic, data);
             })
             .catch(error => {
                 console.error('Error fetching news:', error);
@@ -34,11 +35,22 @@ function ChatView({ onEnter, onTopicSelect }) {
         setLoading(true);
         setResponse(null);
         try {
-            const res = await fetch(`http://localhost:8000/chat?query=${encodeURIComponent(query)}`);
+            // Updated to use /news endpoint which now returns a list of articles directly
+            const res = await fetch(`http://localhost:8000/news?query=${encodeURIComponent(query)}`);
             const data = await res.json();
-            setResponse(data.response || "No response received.");
+            console.log("News results JSON:", data);
+
+            // Format response for display
+            // data is now an array: [{ title, url, ... }, ...]
+            if (Array.isArray(data) && data.length > 0) {
+                const count = data.length;
+                setResponse(`Found ${count} articles for "${query}". Top result: ${data[0].title}`);
+            } else {
+                setResponse(`No articles found for "${query}".`);
+            }
+
         } catch (error) {
-            console.error("Error fetching chat response:", error);
+            console.error("Error fetching news:", error);
             setResponse("Error connecting to server.");
         } finally {
             setLoading(false);
@@ -295,22 +307,6 @@ function ChatView({ onEnter, onTopicSelect }) {
                     ))}
                 </div>
 
-                {/* Response Area */}
-                {response && (
-                    <div style={{
-                        marginTop: '2rem',
-                        padding: '1.5rem',
-                        backgroundColor: 'white',
-                        borderRadius: '1rem',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        maxWidth: '800px',
-                        width: '100%',
-                        animation: 'fadeIn 0.5s ease-out'
-                    }}>
-                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#1F2937', fontSize: '1.1rem' }}>Fuzzy Search Result:</h3>
-                        <p style={{ margin: 0, color: '#4B5563', lineHeight: '1.5' }}>{response}</p>
-                    </div>
-                )}
                 <style>{`
                     @keyframes fadeIn {
                         from { opacity: 0; transform: translateY(10px); }

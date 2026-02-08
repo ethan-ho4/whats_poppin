@@ -39,19 +39,39 @@ def read_root():
 
 
 from server.db_handle.search_articles import search_articles
+from server.fuzzy_search import fuzzy_search
 
 @app.get("/news")
-def get_news(query: str = None, count: int = 1000, threshold: float = 0.25):
+def get_news(query: str = None, count: int = 1000, threshold: float = 0.25, enable_fuzzy: bool = True):
     """
     Get news articles. 
-    If query is provided, performs a vector search.
-    Otherwise returns a default list (or could return latest news).
+    If query is provided, performs a vector search (optionally with fuzzy correction).
+    Otherwise returns a default list.
     """
     if query:
         print(f"Searching for: {query}")
+        
+        search_query = query
+        if enable_fuzzy:
+            try:
+                corrected = fuzzy_search(query)
+                if corrected != query:
+                    print(f"Fuzzy corrected: {corrected}")
+                    search_query = corrected
+            except Exception as e:
+                print(f"Fuzzy search error: {e}")
+
         try:
-            results = search_articles(query, match_threshold=threshold, match_count=count)
-            return results
+            results = search_articles(search_query, match_threshold=threshold, match_count=count)
+            
+            # Print the results as JSON to the console
+            print(f"\n--- Search Results ({len(results)} found) ---")
+            print(json.dumps(results[:5], indent=2))  # Print first 5 items to avoid huge logs
+            if len(results) > 5:
+                print(f"... and {len(results) - 5} more.")
+            print("------------------------------------------\n")
+
+            return results 
         except Exception as e:
             import traceback
             tb = traceback.format_exc()
@@ -61,10 +81,7 @@ def get_news(query: str = None, count: int = 1000, threshold: float = 0.25):
     # Default behavior: Return empty list if no query provided
     return []
 
-
 from server.main_functions import handle_chat
-
-# ... existing code ...
 
 @app.get("/chat")
 async def chat(query: str):
