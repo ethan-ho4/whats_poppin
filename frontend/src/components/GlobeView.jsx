@@ -25,6 +25,7 @@ function GlobeView({ onBackToHome }) {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
+    const [showLegend, setShowLegend] = useState(false);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
@@ -186,6 +187,85 @@ function GlobeView({ onBackToHome }) {
                     </button>
                 </div>
             </nav>
+
+            {/* Dynamic Info Button Container */}
+            <div
+                style={{
+                    position: 'fixed',
+                    top: showNavbar ? '5.5rem' : '1.5rem',
+                    right: '2rem',
+                    zIndex: 900,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'row-reverse',
+                    gap: '1rem',
+                    transition: 'top 0.3s ease-in-out',
+                }}
+                onMouseEnter={() => setShowLegend(true)}
+                onMouseLeave={() => setShowLegend(false)}
+            >
+                <button
+                    style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '50%',
+                        padding: '0.8rem',
+                        color: 'white',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s, transform 0.2s',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                    onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                        e.currentTarget.style.transform = 'scale(1.1)';
+                    }}
+                    onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
+                    aria-label="Information"
+                >
+                    <Info size={24} />
+                </button>
+
+                <AnimatePresence>
+                    {showLegend && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.2 }}
+                            style={{
+                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '8px',
+                                padding: '0.8rem 1rem',
+                                color: 'white',
+                                fontSize: '0.85rem',
+                                whiteSpace: 'nowrap',
+                                pointerEvents: 'none', // Allow clicking through if needed, though mostly informational
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
+                            }}
+                        >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>C</span>
+                                    <span>Center on Location</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>S</span>
+                                    <span>Toggle Spin</span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
 
             {/* Bottom Branding */}
             <div style={{
