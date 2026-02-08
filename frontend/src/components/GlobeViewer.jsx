@@ -513,7 +513,7 @@ const phi2 = lat2 * rad;
                 lineHoverPrecision={0}
 
                 polygonsData={countries.features}
-                polygonAltitude={d => (d.properties.ISO_A3 === selectedCountry ? 0.06 : 0.01)}
+                polygonAltitude={0.01}
                 polygonCapColor={d =>
                     (d.properties.ISO_A3 === selectedCountry ? 'rgba(56, 189, 248, 0.8)' : 'rgba(200, 200, 200, 0.1)')
                 }
@@ -521,7 +521,7 @@ const phi2 = lat2 * rad;
                 polygonStrokeColor={() => '#111'}
                 polygonLabel={getPolygonLabel}
 
-                onPolygonHover={setHoverD}
+                onPolygonHover={null}
                 onPolygonClick={(d) => {
                     console.log('Polygon Clicked:', d.properties.ADMIN);
                     onCountrySelect(d.properties.ISO_A3, d.properties.ADMIN)
@@ -543,15 +543,20 @@ const phi2 = lat2 * rad;
                          Object.assign(obj.position, coords);
                      }
                 }}
-                onCustomLayerClick={(obj) => {
-                    const d = obj.userData;
+                onCustomLayerClick={(d) => {
+                    console.log('Marker clicked:', d);
                     if (d) {
-                        const country = countries.features.find(c => c.properties.ISO_A3 === d.isoCode);
-                        onCountrySelect(d.isoCode, country ? country.properties.ADMIN : d.locationLabels);
+                        // Try multiple possible URL field names
+                        const articleUrl = d.url || d.link || d.article_url || d.source_url;
+                        if (articleUrl) {
+                            console.log('Opening URL:', articleUrl);
+                            window.open(articleUrl, '_blank');
+                        } else {
+                            console.log('No URL found in article data:', Object.keys(d));
+                        }
                     }
                 }}
-                customLayerLabel={(obj) => {
-                     const d = obj.userData;
+                customLayerLabel={(d) => {
                      if (!d) return '';
                      return `
                         <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2); font-family: 'Moon', sans-serif;">
