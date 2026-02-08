@@ -102,36 +102,72 @@ function GlobeView({ onBackToHome }) {
                     margin: 0,
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
-                    color: 'white'
+                    color: 'white',
+                    flex: '1'
                 }}>
                     What's Poppin
                 </h1>
 
-                <button
-                    onClick={onBackToHome}
-                    style={{
-                        backgroundColor: 'white',
-                        color: 'black',
-                        border: 'none',
-                        padding: '0.5rem 1.5rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
-                    }}
-                    onMouseOver={(e) => {
-                        e.target.style.backgroundColor = '#e5e7eb';
-                        e.target.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseOut={(e) => {
-                        e.target.style.backgroundColor = 'white';
-                        e.target.style.transform = 'translateY(0)';
-                    }}
-                >
-                    Chat
-                </button>
+                {/* Topic Links - Centered */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '2', justifyContent: 'center' }}>
+                    {['Technology', 'Business', 'Sports', 'Entertainment', 'Science'].map((topic, index, arr) => (
+                        <React.Fragment key={topic}>
+                            <span
+                                style={{
+                                    fontSize: '0.95rem',
+                                    fontFamily: '"Roboto", sans-serif',
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    cursor: 'pointer',
+                                    transition: 'color 0.2s',
+                                    fontWeight: '400'
+                                }}
+                                onMouseOver={(e) => {
+                                    e.target.style.color = 'white';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.target.style.color = 'rgba(255, 255, 255, 0.7)';
+                                }}
+                            >
+                                {topic}
+                            </span>
+                            {index < arr.length - 1 && (
+                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.95rem' }}>/</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
+
+                {/* Search Button - Right */}
+                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                        onClick={onBackToHome}
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            padding: '0.6rem',
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </div>
             </nav>
 
             {/* Bottom Branding */}

@@ -198,6 +198,7 @@ function ChatView({ onEnter, onTopicSelect }) {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
+                        autoFocus
                         placeholder="Ask about global news, trends, or specific countries..."
                         style={{
                             width: '100%',
