@@ -8,7 +8,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
     const [countries, setCountries] = useState({ features: [] });
     const [hoverD, setHoverD] = useState(null);
     const [visibleData, setVisibleData] = useState([]);
-    
+
     // New state for the "No Articles Found" message
     const [showNoDataMessage, setShowNoDataMessage] = useState(false);
 
@@ -31,7 +31,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
         dynamicPoints.forEach((article) => {
             const lat = article.lat;
             const lng = article.lng || article.lon;
-            
+
             if (lat !== undefined && lng !== undefined) {
                 // Map GDELT FIPS code to ISO-A3
                 const fips = article.country_code;
@@ -72,13 +72,13 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
 
         const { lat, lng, altitude } = globeEl.current.pointOfView();
 
-        const ZOOM_THRESHOLD = 1.5; 
-        const VIEW_ANGLE_FACTOR = 0.6; 
+        const ZOOM_THRESHOLD = 1.5;
+        const VIEW_ANGLE_FACTOR = 0.6;
 
         // Always use the latest points from the Ref to avoid stale closure
         const candidates = allPointsRef.current;
 
-        let maxAngle = Math.min(Math.PI / 2, altitude * VIEW_ANGLE_FACTOR + 0.3); 
+        let maxAngle = Math.min(Math.PI / 2, altitude * VIEW_ANGLE_FACTOR + 0.3);
 
         if (altitude > ZOOM_THRESHOLD) {
             maxAngle = Math.PI / 1.5;
@@ -215,6 +215,8 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
 
             // 'c' key: Home to user location
             if (key === 'c') {
+                if (isAnimatingRef.current || showNoDataMessage) return;
+
                 setShowNoDataMessage(false); // Reset message on navigation
                 const loc = userLocationRef.current;
                 if (loc && globeEl.current) {
@@ -244,6 +246,8 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
 
             // 's' key: Toggle spin
             if (key === 's') {
+                if (isAnimatingRef.current || showNoDataMessage) return;
+
                 if (globeEl.current) {
                     const controls = globeEl.current.controls();
                     if (controls) {
@@ -257,7 +261,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
 
             // 'a' key: Accelerate spin, zoom out, then look into space
             if (key === 'a') {
-                if (isAnimatingRef.current) return;
+                if (isAnimatingRef.current || showNoDataMessage) return;
                 isAnimatingRef.current = true;
                 setShowNoDataMessage(false); // Reset message at start
                 if (globeEl.current) {
@@ -402,7 +406,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [showNoDataMessage]);
 
     // Window resize handling
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
