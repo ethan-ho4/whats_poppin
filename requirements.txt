@@ -34,3 +34,6 @@ pyspellchecker
 
 # Async Support
 asyncio
+
+# Database
+supabase

@@ -19,37 +19,52 @@ except ImportError:
         from vector_db import VectorDB
 
 def main():
-    print("--- Checking Vector Database Status ---")
+    print("--- Checking Supabase Database Status ---")
     
+    # Load .env if needed
+    from dotenv import load_dotenv
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    load_dotenv(os.path.join(root_dir, ".env"))
+
     try:
-        db = VectorDB()
+        from supabase_client import SupabaseClient
+    except ImportError:
+        # Fallback if running from different location
+        sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+        from supabase_client import SupabaseClient
+
+    try:
+        client = SupabaseClient()
         
         # 1. Check Count
-        count = db.collection.count()
+        # count='exact', head=True returns count without data
+        res = client.supabase.table("articles").select("*", count="exact", head=True).execute()
+        count = res.count
         print(f"\nTotal Articles stored: {count}")
         
         if count > 0:
             print("\n--- Sample Data (First 3 items) ---")
-            # peek() returns dict with keys: ids, embeddings, metadatas, documents
-            data = db.collection.peek(limit=3)
+            res = client.supabase.table("articles").select("*").limit(3).execute()
+            data = res.data
             
-            ids = data['ids']
-            metadatas = data['metadatas']
-            embeddings = data['embeddings']
-            
-            for i in range(len(ids)):
-                meta = metadatas[i]
-                emb = embeddings[i]
-                print(f"\n[{i+1}] ID: {ids[i]}")
-                print(f"    Title: {meta.get('title', 'N/A')}")
-                print(f"    Date: {meta.get('date', 'N/A')}")
-                print(f"    Themes: {meta.get('themes', '')}")
-                print(f"    Locations: {meta.get('locations', '')}")
-                print(f"    Embedding: Shape {len(emb) if emb is not None else 'None'}")
-                if emb is not None:
-                    print(f"    Vector Preview: {emb[:5]}...")
+            for i, item in enumerate(data):
+                print(f"\n[{i+1}] ID: {item.get('id', 'N/A')}")
+                print(f"    URL: {item.get('url', 'N/A')}")
+                print(f"    Title: {item.get('title', 'N/A')}")
+                print(f"    Date: {item.get('date', 'N/A')}")
+                print(f"    Themes: {item.get('themes', '')[:50]}...")
+                print(f"    Locations: {item.get('location_names', '')[:50]}...")
+                
+                # Check embeddings existence (they are large, so maybe just check length or presence)
+                title_emb = item.get('title_embedding')
+                print(f"    Title Embedding: {'Present' if title_emb else 'Missing'}")
+                if title_emb:
+                    # Parse vector string if it comes back as string, or list
+                    # Supabase-py might return list of floats
+                   pass
+
         else:
-            print("\n[!] The database is empty. Run 'python server/ingest.py --limit 0' to populate it.")
+            print("\n[!] The database is empty. Run 'python server/db_handle/ingest.py' to populate it.")
             
     except Exception as e:
         print(f"\n[Error] Could not connect to database: {e}")
