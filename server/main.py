@@ -41,7 +41,7 @@ def read_root():
 from server.db_handle.search_articles import search_articles
 
 @app.get("/news")
-def get_news(query: str = None, count: int = 1000, threshold: float = 0.3):
+def get_news(query: str = None, count: int = 1000, threshold: float = 0.25):
     """
     Get news articles. 
     If query is provided, performs a vector search.
