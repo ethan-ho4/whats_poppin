@@ -148,6 +148,54 @@ function GlobeView({ onBackToHome }) {
                 </div>
             </motion.div>
 
+            {/* Dynamic Info Button */}
+            <button
+                style={{
+                    position: 'fixed',
+                    top: showNavbar ? '5.5rem' : '1.5rem',
+                    right: '2rem',
+                    zIndex: 900,
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '50%',
+                    padding: '0.8rem',
+                    color: 'white',
+                    cursor: 'pointer',
+                    transition: 'top 0.3s ease-in-out, background-color 0.2s, transform 0.2s',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+                onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                }}
+                onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                }}
+                aria-label="Information"
+            >
+                <Info size={24} />
+            </button>
+
+            {/* Bottom Branding */}
+            <div style={{
+                position: 'fixed',
+                bottom: '1rem',
+                right: '1.5rem',
+                zIndex: 100,
+                color: 'rgba(255, 255, 255, 0.4)',
+                fontSize: '0.85rem',
+                fontFamily: '"Roboto", sans-serif',
+                letterSpacing: '2px',
+                textTransform: 'uppercase'
+            }}>
+                What's Poppin © 2026
+            </div>
+
             {/* Side Panel */}
             <NewsPanel
                 selectedCountry={selectedCountry}
