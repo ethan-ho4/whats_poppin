@@ -549,10 +549,11 @@ def process_file(url, is_translation_stream=False):
             print(f"Success. Appended to {ARCHIVE_FILE} (Cleaned/Translated) and {ARCHIVE_FILE_RAW} (Raw/Original)")
             
             # --- Vector DB Integration ---
+            # --- Vector DB Integration ---
             try:
                 # We need to import here to avoid circular dependencies if any, 
                 # or just to keep it isolated.
-                # Adjust path to ensure we can import vector_db
+                # Adjust path to ensure we can import supabase_client
                 import sys
                 import os
                 # current_dir is server/
@@ -560,10 +561,18 @@ def process_file(url, is_translation_stream=False):
                 if current_dir not in sys.path:
                     sys.path.append(current_dir)
                     
-                from db_handle.vector_db import VectorDB
+                from db_handle.supabase_client import SupabaseClient
                 
-                print("  [Ingesting into Vector DB...]")
-                db = VectorDB()
+                print("  [Ingesting into Supabase...]")
+                # Initialize Supabase (needs .env loaded, which usually main.py does, 
+                # but if running news_retrieve separately, might need load_dotenv)
+                # Let's try to load .env if not set
+                if not os.getenv("SUPABASE_URL"):
+                    from dotenv import load_dotenv
+                    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    load_dotenv(os.path.join(root_dir, ".env"))
+                
+                db = SupabaseClient()
                 
                 # Convert DataFrame to list of dicts for ingestion
                 # We need to map df columns to what add_articles expects
@@ -577,11 +586,12 @@ def process_file(url, is_translation_stream=False):
                         'location_names': row.get('location_names', '')
                     })
                 
+                # Use simplified add_articles which handles embeddings
                 db.add_articles(articles_to_ingest)
-                print(f"  [Successfully ingested {len(articles_to_ingest)} articles into Vector DB]")
+                print(f"  [Successfully ingested {len(articles_to_ingest)} articles into Supabase]")
                 
             except Exception as e:
-                print(f"  [Warning: Vector DB Ingestion Failed: {e}]")
+                print(f"  [Warning: Supabase Ingestion Failed: {e}]")
                 # Don't fail the whole pipeline just because DB ingest failed
                 pass
             # -----------------------------
