@@ -64,11 +64,16 @@ function ChatView({ onEnter, onTopicSelect }) {
     };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#F3F4F6', margin: 0, padding: 0, overflowY: 'auto' }}>
+        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#0a0b0f', margin: 0, padding: 0, overflowY: 'auto' }}>
             {/* Navbar */}
             {/* Navbar */}
             <nav style={{
                 width: '100%',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
+                borderRadius: '0 0 1rem 1rem',
                 padding: '1rem 2rem',
                 boxSizing: 'border-box',
                 display: 'flex',
@@ -79,14 +84,14 @@ function ChatView({ onEnter, onTopicSelect }) {
                 left: 0,
                 right: 0,
                 zIndex: 1000,
-                borderBottom: '1px solid #D1D5DB', // Slightly lighter line to partition navbar
-                // Removed background and glass effect
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
             }}>
                 <h1 style={{
                     margin: 0,
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
-                    color: '#1F2937',
+                    fontFamily: '"Moon", sans-serif',
+                    color: 'white',
                     flex: '1'
                 }}>
                     What's Poppin
@@ -100,17 +105,17 @@ function ChatView({ onEnter, onTopicSelect }) {
                                 onClick={() => handleTopicClick(topic)}
                                 style={{
                                     fontSize: '0.95rem',
-                                    fontFamily: '"Roboto", sans-serif',
-                                    color: selectedTopic === topic ? '#1F2937' : '#6B7280',
+                                    fontFamily: '"Moon", sans-serif',
+                                    color: selectedTopic === topic ? '#3B82F6' : '#D1D5DB',
                                     cursor: 'pointer',
                                     transition: 'color 0.2s',
                                     fontWeight: selectedTopic === topic ? '600' : '400'
                                 }}
                                 onMouseOver={(e) => {
-                                    if (selectedTopic !== topic) e.target.style.color = '#1F2937';
+                                    if (selectedTopic !== topic) e.target.style.color = 'white';
                                 }}
                                 onMouseOut={(e) => {
-                                    if (selectedTopic !== topic) e.target.style.color = '#6B7280';
+                                    if (selectedTopic !== topic) e.target.style.color = '#D1D5DB';
                                 }}
                             >
                                 {topic}
@@ -127,27 +132,31 @@ function ChatView({ onEnter, onTopicSelect }) {
                     <button
                         onClick={onEnter}
                         style={{
-                            backgroundColor: 'white',
-                            color: 'black',
-                            border: 'none',
-                            padding: '0.5rem 1.5rem',
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            fontWeight: '600',
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            padding: '0.6rem',
+                            borderRadius: '50%',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                         }}
                         onMouseOver={(e) => {
-                            e.target.style.backgroundColor = '#e5e7eb';
-                            e.target.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
                         }}
                         onMouseOut={(e) => {
-                            e.target.style.backgroundColor = 'white';
-                            e.target.style.transform = 'translateY(0)';
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
                         }}
                     >
-                        Globe
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
                     </button>
                 </div>
             </nav>
@@ -158,16 +167,18 @@ function ChatView({ onEnter, onTopicSelect }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 height: '100%',
-                padding: '0 2rem'
+                padding: '0 2rem',
+                marginTop: '-100px'
             }}>
                 <h2 style={{
-                    fontFamily: '"Oswald", sans-serif',
-                    fontSize: '2.5rem',
-                    fontWeight: '700',
-                    letterSpacing: '1px',
-                    color: '#1F2937',
+                    fontFamily: '"Moon", sans-serif',
+                    fontSize: '11rem',
+                    fontWeight: '300',
+                    letterSpacing: '3px',
+                    color: 'white',
                     marginBottom: '2rem',
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    textTransform: 'uppercase'
                 }}>
                     What's happening today?
                 </h2>
@@ -183,6 +194,9 @@ function ChatView({ onEnter, onTopicSelect }) {
                         0% { transform: translateX(-150%) skewX(-25deg); }
                         100% { transform: translateX(150%) skewX(-25deg); }
                     }
+                    input::placeholder {
+                        color: rgba(255, 255, 255, 0.5);
+                    }
                     `}
                 </style>
                 <div style={{
@@ -193,17 +207,10 @@ function ChatView({ onEnter, onTopicSelect }) {
                     backgroundSize: '200% 200%',
                     padding: '2px',
                     borderRadius: '1.5rem',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2)',
                     animation: 'gradient-move 3s ease infinite',
-                    transition: 'all 0.3s ease',
-                    overflow: 'hidden' // Ensure shine stays inside
+                    overflow: 'hidden'
                 }}
-                    onMouseOver={(e) => {
-                        e.currentTarget.style.boxShadow = '0 20px 30px -5px rgba(59, 130, 246, 0.2), 0 8px 10px -6px rgba(59, 130, 246, 0.2)';
-                    }}
-                    onMouseOut={(e) => {
-                        e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)';
-                    }}
                 >
                     <input
                         type="text"
@@ -220,14 +227,14 @@ function ChatView({ onEnter, onTopicSelect }) {
                             fontSize: '1.1rem',
                             borderRadius: '1.5rem',
                             border: 'none',
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
+                            backgroundColor: 'rgba(10, 11, 15, 0.8)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
                             outline: 'none',
                             transition: 'all 0.3s ease',
-                            fontFamily: '"Roboto", sans-serif',
+                            fontFamily: '"Moon", sans-serif',
                             fontWeight: '400',
-                            color: 'black'
+                            color: 'white'
                         }}
                     />
                     <button
@@ -284,22 +291,23 @@ function ChatView({ onEnter, onTopicSelect }) {
                     {['Latest Global Headlines', 'Tech Trends in Japan', 'Sports updates in UK', 'Economy in US'].map((hint) => (
                         <button key={hint} style={{
                             padding: '0.5rem 1rem',
-                            backgroundColor: 'white',
-                            border: '1px solid rgba(0,0,0,0.05)',
+                            backgroundColor: '#1F2937',
+                            border: '1px solid rgba(255,255,255,0.2)',
                             borderRadius: '9999px',
                             fontSize: '0.875rem',
-                            color: '#6B7280',
+                            fontFamily: '"Moon", sans-serif',
+                            color: '#D1D5DB',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                            boxShadow: '0 2px 5px rgba(255,255,255,0.05)'
                         }}
                             onMouseOver={(e) => {
                                 e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.color = '#64748B';
+                                e.target.style.color = 'white';
                             }}
                             onMouseOut={(e) => {
                                 e.target.style.transform = 'translateY(0)';
-                                e.target.style.color = '#6B7280';
+                                e.target.style.color = '#D1D5DB';
                             }}
                         >
                             {hint}
@@ -307,6 +315,22 @@ function ChatView({ onEnter, onTopicSelect }) {
                     ))}
                 </div>
 
+                {/* Response Area */}
+                {response && (
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '1.5rem',
+                        backgroundColor: '#1F2937',
+                        borderRadius: '1rem',
+                        boxShadow: '0 4px 6px -1px rgba(255, 255, 255, 0.1)',
+                        maxWidth: '800px',
+                        width: '100%',
+                        animation: 'fadeIn 0.5s ease-out'
+                    }}>
+                        <h3 style={{ margin: '0 0 0.5rem 0', color: 'white', fontSize: '1.1rem' }}>Fuzzy Search Result:</h3>
+                        <p style={{ margin: 0, color: '#D1D5DB', lineHeight: '1.5' }}>{response}</p>
+                    </div>
+                )}
                 <style>{`
                     @keyframes fadeIn {
                         from { opacity: 0; transform: translateY(10px); }
@@ -344,7 +368,7 @@ function ChatView({ onEnter, onTopicSelect }) {
                         color: 'white',
                         fontWeight: '600',
                         fontSize: '1rem',
-                        fontFamily: '"Oswald", sans-serif',
+                        fontFamily: '"Moon", sans-serif',
                         letterSpacing: '1px',
                         textTransform: 'uppercase'
                     }}>
