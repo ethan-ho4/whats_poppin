@@ -38,7 +38,8 @@ const NewsCard = ({ article }) => {
                 marginBottom: '1.25rem',
                 boxSizing: 'border-box',
                 overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                fontFamily: '"Moon", sans-serif'
             }}
             onClick={() => article.url && window.open(article.url, '_blank')}
         >
@@ -102,36 +103,64 @@ const NewsCard = ({ article }) => {
     );
 };
 
-function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: initialNews }) {
+function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, loading, setLoading }) {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState(initialTopic || null);
+
+    // Using prop from App, but keeping local query for immediate feedback in status panel
     const [activeNewsPoints, setActiveNewsPoints] = useState([]);
-    const [searchQuery, setSearchQuery] = useState(initialTopic || null);
-    const [totalNewsResults, setTotalNewsResults] = useState(initialNews ? initialNews.length : 0);
+    const [searchQuery, setSearchQuery] = useState(selectedTopic || null);
+    const [totalNewsResults, setTotalNewsResults] = useState(filteredNews ? filteredNews.length : 0);
     const [renderedPointsCount, setRenderedPointsCount] = useState(0);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
-    const handleTopicClick = (topic) => {
-        setSelectedTopic(topic);
-        setSearchQuery(topic);
+    // Sync activeNewsPoints with filteredNews prop from App
+    useEffect(() => {
+        if (filteredNews && filteredNews.length > 0) {
+            console.log('Syncing filteredNews to GlobeView:', filteredNews.length);
+            const points = filteredNews.filter(article => article.lat && (article.lon || article.lng));
+            setActiveNewsPoints(points);
+            setTotalNewsResults(filteredNews.length);
+            setSearchQuery(selectedTopic);
+        }
+    }, [filteredNews, selectedTopic]);
 
-        // Fetch news with topic filter
+    // Handle internal topic clicks (if user switches topic while in GlobeView)
+    const handleTopicClick = (topic) => {
+        setSearchQuery(topic);
+        if (setLoading) setLoading(true);
+        if (onTopicChange) onTopicChange(topic, []); // Clear previous while loading
+
+        const startTime = Date.now();
+
         fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
             .then(response => response.json())
             .then(newsData => {
                 console.log('News loaded for', topic, newsData);
-                // Filter articles that have valid coordinates for the globe
-                const points = newsData.filter(article => article.lat && (article.lon || article.lng));
-                setTotalNewsResults(newsData.length);
-                setActiveNewsPoints(points);
-                setRenderedPointsCount(0); // Reset rendered count
+
+                // Ensure at least 1s loading time for the animation
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, 1000 - elapsedTime);
+
+                setTimeout(() => {
+                    const points = newsData.filter(article => article.lat && (article.lon || article.lng));
+                    if (onTopicChange) {
+                        onTopicChange(topic, newsData);
+                    } else {
+                        // Fallback if no prop
+                        setActiveNewsPoints(points);
+                    }
+                    setTotalNewsResults(newsData.length);
+                    setRenderedPointsCount(0);
+                    if (setLoading) setLoading(false);
+                }, remainingTime);
             })
             .catch(error => {
                 console.error('Error fetching news:', error);
+                if (setLoading) setLoading(false);
             });
     };
 
@@ -145,33 +174,30 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: in
         setCountryName(null);
     };
 
-    // Sync with initial props if they change (e.g., coming from ChatView)
-    useEffect(() => {
-        if (initialTopic) {
-            setSelectedTopic(initialTopic);
-            setSearchQuery(initialTopic);
-        }
-        if (initialNews) {
-            setTotalNewsResults(initialNews.length);
-            const points = initialNews.filter(article => article.lat && (article.lon || article.lng));
-            setActiveNewsPoints(points);
-        }
-    }, [initialTopic, initialNews]);
-
     // Show navbar when component mounts (during view switch)
     useEffect(() => {
         setShowNavbar(true);
 
-        // Hide after 3 seconds
-        const timeout = setTimeout(() => {
-            setShowNavbar(false);
-        }, 3000);
-
-        return () => clearTimeout(timeout);
-    }, []);
+        // Hide after 3 seconds, ONLY if no topic is selected
+        if (!selectedTopic) {
+            const timeout = setTimeout(() => {
+                setShowNavbar(false);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [selectedTopic]); // Re-run when selectedTopic changes
 
     useEffect(() => {
         const handleMouseMove = (e) => {
+            // If topic is selected, keep navbar shown and don't attach auto-hide logic
+            if (selectedTopic) {
+                setShowNavbar(true);
+                if (hideTimeoutRef.current) {
+                    clearTimeout(hideTimeoutRef.current);
+                }
+                return;
+            }
+
             const currentY = e.clientY;
 
             // Show navbar if mouse moves upward or is near the top
@@ -200,10 +226,10 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: in
                 clearTimeout(hideTimeoutRef.current);
             }
         };
-    }, []);
+    }, [selectedTopic]); // Re-attach listener if topic selection changes
 
     return (
-        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000011', margin: 0, padding: 0, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000011', margin: 0, padding: 0, position: 'relative', overflow: 'hidden', fontFamily: '"Moon", sans-serif' }}>
 
             {/* Globe Container */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
@@ -214,6 +240,104 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: in
                     onPointsRendered={setRenderedPointsCount}
                 />
             </div>
+
+            {/* Navbar */}
+            <nav style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                width: '100%',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
+                borderRadius: '0 0 1rem 1rem',
+                padding: '1rem 2rem',
+                boxSizing: 'border-box',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
+                transition: 'transform 0.3s ease-in-out',
+                zIndex: 1000,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+            }}>
+                <h1 style={{
+                    margin: 0,
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    fontFamily: '"Moon", sans-serif',
+                    flex: '1',
+                    cursor: 'pointer'
+                }} onClick={onBackToHome}>
+                    What's Poppin
+                </h1>
+
+                {/* Topic Links - Centered */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '2', justifyContent: 'center' }}>
+                    {['Technology', 'Business', 'Sports', 'Entertainment', 'Science'].map((topic, index, arr) => (
+                        <React.Fragment key={topic}>
+                            <span
+                                onClick={() => handleTopicClick(topic)}
+                                style={{
+                                    fontSize: '0.95rem',
+                                    fontFamily: '"Moon", sans-serif',
+                                    color: selectedTopic === topic ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    fontWeight: selectedTopic === topic ? 'bold' : '400',
+                                    textShadow: selectedTopic === topic ? '0 0 10px rgba(255,255,255,0.5)' : 'none'
+                                }}
+                                onMouseOver={(e) => {
+                                    if (selectedTopic !== topic) e.target.style.color = 'white';
+                                }}
+                                onMouseOut={(e) => {
+                                    if (selectedTopic !== topic) e.target.style.color = 'rgba(255, 255, 255, 0.7)';
+                                }}
+                            >
+                                {topic}
+                            </span>
+                            {index < arr.length - 1 && (
+                                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem' }}>/</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+                </div>
+
+                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                    {/* Add any other buttons here */}
+                    <button
+                        onClick={onBackToHome}
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            color: 'white',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            padding: '0.6rem',
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </div>
+            </nav>
 
             {/* Right Side UI Container (Status Panel & Info Button) */}
             <div
@@ -385,183 +509,72 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: in
                 </div>
             </div>
 
-            {/* Navbar */}
-            <nav style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                width: '100%',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(20px) saturate(180%)',
-                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
-                borderRadius: '0 0 1rem 1rem',
-                padding: '1rem 2rem',
-                boxSizing: 'border-box',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
-                transition: 'transform 0.3s ease-in-out',
-                zIndex: 1000,
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-            }}>
-                <h1 style={{
-                    margin: 0,
-                    fontSize: '1.5rem',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    flex: '1'
-                }}>
-                    What's Poppin
-                </h1>
-
-                {/* Topic Links - Centered */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '2', justifyContent: 'center' }}>
-                    {['Technology', 'Business', 'Sports', 'Entertainment', 'Science'].map((topic, index, arr) => (
-                        <React.Fragment key={topic}>
-                            <span
-                                onClick={() => handleTopicClick(topic)}
-                                style={{
-                                    fontSize: '0.95rem',
-                                    fontFamily: '"Roboto", sans-serif',
-                                    color: selectedTopic === topic ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
-                                    cursor: 'pointer',
-                                    transition: 'color 0.2s',
-                                    fontWeight: selectedTopic === topic ? '600' : '400'
-                                }}
-                                onMouseOver={(e) => {
-                                    if (selectedTopic !== topic) e.target.style.color = 'white';
-                                }}
-                                onMouseOut={(e) => {
-                                    if (selectedTopic !== topic) e.target.style.color = 'rgba(255, 255, 255, 0.7)';
-                                }}
-                            >
-                                {topic}
-                            </span>
-                            {index < arr.length - 1 && (
-                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.95rem' }}>/</span>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
-
-                {/* Search Button - Right */}
-                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                        onClick={onBackToHome}
+            {/* Loading Indicator */}
+            <AnimatePresence>
+                {loading && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                            color: 'white',
-                            border: '1px solid rgba(255, 255, 255, 0.3)',
-                            padding: '0.6rem',
-                            borderRadius: '50%',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            position: 'absolute',
+                            bottom: '3rem',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 2000,
+                            pointerEvents: 'none',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                            e.currentTarget.style.transform = 'scale(1)';
+                            gap: '1rem',
+                            padding: '1.5rem 3rem',
+                            background: 'rgba(20, 25, 40, 0.75)',
+                            backdropFilter: 'blur(24px) saturate(200%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '1rem',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
                         }}
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                        </svg>
-                    </button>
-                </div>
-            </nav>
-
-            {/* Dynamic Info Button Container */}
-            <div
-                style={{
-                    position: 'fixed',
-                    top: showNavbar ? '5.5rem' : '1.5rem',
-                    right: '2rem',
-                    zIndex: 900,
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexDirection: 'row-reverse',
-                    gap: '1rem',
-                    transition: 'top 0.3s ease-in-out',
-                }}
-                onMouseEnter={() => setShowLegend(true)}
-                onMouseLeave={() => setShowLegend(false)}
-            >
-                <button
-                    style={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(10px)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '50%',
-                        padding: '0.8rem',
-                        color: 'white',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s, transform 0.2s',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                    onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                    aria-label="Information"
-                >
-                    <Info size={24} />
-                </button>
-
-                <AnimatePresence>
-                    {showLegend && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2 }}
-                            style={{
-                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                                backdropFilter: 'blur(8px)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '8px',
-                                padding: '0.8rem 1rem',
-                                color: 'white',
-                                fontSize: '0.85rem',
-                                whiteSpace: 'nowrap',
-                                pointerEvents: 'none', // Allow clicking through if needed, though mostly informational
-                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                            }}
-                        >
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>C</span>
-                                    <span>Center on Location</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>S</span>
-                                    <span>Toggle Spin</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>A</span>
-                                    <span>Ascend to Space</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        <div style={{
+                            width: '300px',
+                            height: '8px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}>
+                            <motion.div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #3B82F6, #EC4899, #3B82F6)',
+                                    backgroundSize: '200% 100%'
+                                }}
+                                animate={{
+                                    x: ['-100%', '100%']
+                                }}
+                                transition={{
+                                    repeat: Infinity,
+                                    duration: 1.5,
+                                    ease: 'linear'
+                                }}
+                            />
+                        </div>
+                        <div style={{
+                            fontFamily: '"Moon", sans-serif',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            fontSize: '0.9rem',
+                            letterSpacing: '1.5px',
+                            fontWeight: 'bold',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                        }}>
+                            ANALYZING GLOBAL DATA...
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Bottom Branding */}
             <div style={{
@@ -609,8 +622,7 @@ function GlobeView({ onBackToHome, selectedTopic: initialTopic, filteredNews: in
                             boxShadow: '0 0 50px rgba(0,0,0,0.5)',
                             overflowY: 'auto',
                             overflowX: 'hidden',
-                            boxSizing: 'border-box',
-                            padding: '2rem'
+                            boxSizing: 'border-box'
                         }}>
 
                         <button
