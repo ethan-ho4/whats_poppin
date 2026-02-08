@@ -3,7 +3,7 @@ import ParticleWave from './ParticleWave';
 
 
 
-function ChatView({ onEnter, onTopicSelect, selectedTopic }) {
+function ChatView({ onEnter, onTopicSelect, onSearch, selectedTopic }) {
     // Note: selectedTopic prop comes from App, but we also have local state? 
     // App passes selectedTopic now. We should use it for styling.
     // We can remove local selectedTopic state if we want to rely on parent, 
@@ -29,28 +29,10 @@ function ChatView({ onEnter, onTopicSelect, selectedTopic }) {
     const handleSearch = async () => {
         if (!query.trim()) return;
 
-        setLocalLoading(true);
-        setResponse(null);
-        try {
-            // Updated to use /news endpoint which now returns a list of articles directly
-            const res = await fetch(`http://localhost:8000/news?query=${encodeURIComponent(query)}`);
-            const data = await res.json();
-            console.log("News results JSON:", data);
-
-            // Format response for display
-            // data is now an array: [{ title, url, ... }, ...]
-            if (Array.isArray(data) && data.length > 0) {
-                const count = data.length;
-                setResponse(`Found ${count} articles for "${query}". Top result: ${data[0].title}`);
-            } else {
-                setResponse(`No articles found for "${query}".`);
-            }
-
-        } catch (error) {
-            console.error("Error fetching news:", error);
-            setResponse("Error connecting to server.");
-        } finally {
-            setLocalLoading(false);
+        // Use the onSearch prop passed from App.jsx to handle global search & transition
+        if (onSearch) {
+            onSearch(query);
+            // We don't need local response state anymore as we switch views
         }
     };
 

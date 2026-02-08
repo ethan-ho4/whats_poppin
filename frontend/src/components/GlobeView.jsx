@@ -141,7 +141,7 @@ const NewsCard = ({ article }) => {
     );
 };
 
-function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, loading, setLoading }) {
+function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, loading, setLoading, isSearchError, setIsSearchError }) {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
@@ -149,9 +149,7 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
 
     // Using prop from App, but keeping local query for immediate feedback in status panel
     const [activeNewsPoints, setActiveNewsPoints] = useState([]);
-    const [searchQuery, setSearchQuery] = useState(selectedTopic || null);
-    const [totalNewsResults, setTotalNewsResults] = useState(filteredNews ? filteredNews.length : 0);
-    const [renderedPointsCount, setRenderedPointsCount] = useState(0);
+
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
@@ -161,14 +159,13 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
             console.log('Syncing filteredNews to GlobeView:', filteredNews.length);
             const points = filteredNews.filter(article => article.lat && (article.lon || article.lng));
             setActiveNewsPoints(points);
-            setTotalNewsResults(filteredNews.length);
-            setSearchQuery(selectedTopic);
+
         }
     }, [filteredNews, selectedTopic]);
 
     // Handle internal topic clicks (if user switches topic while in GlobeView)
     const handleTopicClick = (topic) => {
-        setSearchQuery(topic);
+
         if (setLoading) setLoading(true);
         if (onTopicChange) onTopicChange(topic, []); // Clear previous while loading
 
@@ -191,8 +188,7 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                         // Fallback if no prop
                         setActiveNewsPoints(points);
                     }
-                    setTotalNewsResults(newsData.length);
-                    setRenderedPointsCount(0);
+
                     if (setLoading) setLoading(false);
                 }, remainingTime);
             })
@@ -216,25 +212,17 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
     useEffect(() => {
         setShowNavbar(true);
 
-        // Hide after 3 seconds, ONLY if no topic is selected
-        if (!selectedTopic) {
-            const timeout = setTimeout(() => {
-                setShowNavbar(false);
-            }, 3000);
-            return () => clearTimeout(timeout);
-        }
+        // Hide after 3 seconds
+        const timeout = setTimeout(() => {
+            setShowNavbar(false);
+        }, 3000);
+        return () => clearTimeout(timeout);
     }, [selectedTopic]); // Re-run when selectedTopic changes
 
     useEffect(() => {
         const handleMouseMove = (e) => {
             // If topic is selected, keep navbar shown and don't attach auto-hide logic
-            if (selectedTopic) {
-                setShowNavbar(true);
-                if (hideTimeoutRef.current) {
-                    clearTimeout(hideTimeoutRef.current);
-                }
-                return;
-            }
+            // If topic is selected, we still want auto-hide behavior (removed early return)
 
             const currentY = e.clientY;
 
@@ -275,7 +263,9 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                     onCountrySelect={handleCountrySelect}
                     selectedCountry={selectedCountry}
                     dynamicPoints={activeNewsPoints}
-                    onPointsRendered={setRenderedPointsCount}
+                    isSearchError={isSearchError}
+                    onResetError={() => setIsSearchError(false)}
+                    onSetError={setIsSearchError}
                 />
             </div>
 
@@ -345,7 +335,6 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                 </div>
 
                 <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                    {/* Add any other buttons here */}
                     <button
                         onClick={onBackToHome}
                         style={{
@@ -377,7 +366,47 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                 </div>
             </nav>
 
-            {/* Right Side UI Container (Status Panel & Info Button) */}
+            {/* Search Info Window - Centered under header */}
+            <AnimatePresence>
+                {selectedTopic && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, x: '-50%', top: '6rem' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%', top: showNavbar ? '6rem' : '1rem' }}
+                        exit={{ opacity: 0, y: -20, x: '-50%' }}
+                        style={{
+                            position: 'fixed',
+                            left: '50%',
+                            // transform: handled by x prop
+                            background: 'rgba(20, 25, 40, 0.6)', // More transparent
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '2rem',
+                            padding: '0.75rem 2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1.5rem',
+                            zIndex: 900,
+                            pointerEvents: 'none',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.2rem' }}>
+                                {['Technology', 'Business', 'Sports', 'Entertainment', 'Science'].includes(selectedTopic) ? 'Current Topic' : 'Searching For'}
+                            </span>
+                            <span style={{ fontSize: '1.1rem', color: 'white', fontFamily: '"Moon", sans-serif', fontWeight: 'bold' }}>"{selectedTopic}"</span>
+                        </div>
+                        <div style={{ width: '1px', height: '2rem', background: 'rgba(255,255,255,0.2)' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.2rem' }}>Results</span>
+                            <span style={{ fontSize: '1.1rem', color: '#60A5FA', fontFamily: 'monospace', fontWeight: 'bold' }}>{activeNewsPoints ? activeNewsPoints.length : 0}</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Dynamic Info Button Container */}
             <div
                 style={{
                     position: 'fixed',
@@ -392,81 +421,7 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                 }}
             >
                 {/* Search Status Panel */}
-                <AnimatePresence>
-                    {searchQuery && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.3 }}
-                            style={{
-                                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                                backdropFilter: 'blur(20px) saturate(180%)',
-                                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '12px',
-                                padding: '1rem 1.5rem',
-                                color: 'white',
-                                minWidth: '250px',
-                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                                pointerEvents: 'auto'
-                            }}
-                        >
-                            <div style={{ marginBottom: '0.75rem' }}>
-                                <div style={{
-                                    fontSize: '0.75rem',
-                                    color: 'rgba(255, 255, 255, 0.5)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '1px',
-                                    marginBottom: '0.25rem'
-                                }}>
-                                    Searching
-                                </div>
-                                <div style={{
-                                    fontSize: '1.25rem',
-                                    fontWeight: 'bold',
-                                    color: '#FFFFFF'
-                                }}>
-                                    {searchQuery}
-                                </div>
-                            </div>
 
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.5rem',
-                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                                paddingTop: '0.75rem'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                                        Total Results
-                                    </span>
-                                    <span style={{
-                                        fontSize: '1rem',
-                                        fontWeight: 'bold',
-                                        color: '#60A5FA'
-                                    }}>
-                                        {totalNewsResults}
-                                    </span>
-                                </div>
-
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
-                                        Rendered
-                                    </span>
-                                    <span style={{
-                                        fontSize: '1rem',
-                                        fontWeight: 'bold',
-                                        color: '#34D399'
-                                    }}>
-                                        {renderedPointsCount} / {activeNewsPoints.length}
-                                    </span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
 
                 {/* Info Button Container */}
                 <div
@@ -551,15 +506,15 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
             <AnimatePresence>
                 {loading && (
                     <motion.div
-                        initial={{ y: 100, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 100, opacity: 0 }}
+                        initial={{ y: 100, opacity: 0, x: '-50%' }}
+                        animate={{ y: 0, opacity: 1, x: '-50%' }}
+                        exit={{ y: 100, opacity: 0, x: '-50%' }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         style={{
                             position: 'absolute',
                             bottom: '3rem',
                             left: '50%',
-                            transform: 'translateX(-50%)',
+                            // transform: handled by x prop
                             zIndex: 2000,
                             pointerEvents: 'none',
                             display: 'flex',
