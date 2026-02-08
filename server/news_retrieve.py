@@ -597,7 +597,10 @@ def process_file(url, is_translation_stream=False):
                         'url': row.get('url', ''),
                         'date': str(row.get('date', '')),
                         'themes': row.get('themes', ''),
-                        'location_names': row.get('location_names', '')
+                        'location_names': row.get('location_names', ''),
+                        'location_countries': row.get('location_countries', ''),
+                        'first_location_lat': row.get('first_location_lat'),
+                        'first_location_lon': row.get('first_location_lon')
                     })
                 
                 # Use simplified add_articles which handles embeddings

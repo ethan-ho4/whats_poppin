@@ -9,11 +9,13 @@ create table if not exists articles (
   date text,
   themes text,
   location_names text,
-  
+  location_countries text,
+  first_location_lat float,
+  first_location_lon float,
   -- Embeddings (using 384 dimensions for all-MiniLM-L6-v2)
   title_embedding vector(384),
   themes_embedding vector(384),
-  locations_embedding vector(384)
+  locations_embedding vector(384),
 );
 
 -- Optional: Create indexes for faster similarity search

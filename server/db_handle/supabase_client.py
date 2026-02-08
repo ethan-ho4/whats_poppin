@@ -82,9 +82,12 @@ class SupabaseClient:
                 "date": str(row.get('date', '')),
                 "themes": str(row.get('themes', '')),
                 "location_names": str(row.get('location_names', '')),
+                "location_countries": str(row.get('location_countries', '')),
+                "first_location_lat": row.get('first_location_lat'),
+                "first_location_lon": row.get('first_location_lon'),
                 "title_embedding": title_embeddings[i].tolist() if title_embeddings is not None else None,
                 "themes_embedding": theme_embeddings[i].tolist() if theme_embeddings is not None else None,
-                "locations_embedding": location_embeddings[i].tolist() if location_embeddings is not None else None
+                "locations_embedding": location_embeddings[i].tolist() if location_embeddings is not None else None,
             }
             batch_data.append(article_data)
         
