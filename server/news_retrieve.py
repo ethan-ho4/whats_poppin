@@ -8,13 +8,14 @@ from datetime import datetime
 from deep_translator import GoogleTranslator
 import html
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
 
 # GDELT 2.0 Global Knowledge Graph (GKG)
 MASTER_URL_TRANSLATION = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
 MASTER_URL_ORIGINAL = "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
 
-ARCHIVE_FILE = "news.csv"  # All articles with English titles
-ARCHIVE_FILE_NATIVE = "news_native.csv"  # All articles with native/original titles (for debugging)
+ARCHIVE_FILE = "news.csv"  # Cleaned, English titles
+ARCHIVE_FILE_RAW = "news_raw.csv"  # Raw, original titles, uncleaned themes/locations
 
 # --- CONFIGURATION: SELECT FIELDS TO EXTRACT ---
 # NOTE: GDELT GKG uses tab-separated format with 27 columns (0-indexed)
@@ -269,6 +270,56 @@ def parse_v2_counts(counts_str):
     
     return counts
 
+def clean_theme_name(theme_code):
+    """
+    Cleans a GDELT theme code into a human-readable string.
+    Example: "TAX_FNCACT_PRESIDENT" -> "President"
+    Example: "WB_696_PUBLIC_SECTOR_MANAGEMENT" -> "Public Sector Management"
+    """
+    if not theme_code:
+        return ""
+    
+    # Remove count if present (e.g., "THEME:5")
+    if ':' in theme_code:
+        theme_names = theme_code.split(':')
+        theme_code = theme_names[0]
+        # Keep count if needed, but for embedding name is key
+    
+    cleaned = theme_code
+    
+    # Remove common prefixes
+    prefixes = [
+        r"TAX_FNCACT_", r"TAX_ETHNICITY_", r"TAX_WORLDLANGUAGES_", r"TAX_WORLDMAMMALS_", 
+        r"TAX_POLITICAL_PARTY_", r"TAX_",
+        r"WB_\d+_", r"WB_",
+        r"CRISISLEX_C\d+_", r"CRISISLEX_T\d+_", r"CRISISLEX_O\d+_", r"CRISISLEX_",
+        r"UNGP_", r"SOC_", r"ECON_", r"ENV_", r"EPU_POLICY_", r"EPU_", r"GEN_",
+        r"USPEC_", r"LEADER", r"GENERAL_", r"GOV_"
+    ]
+    
+    for prefix in prefixes:
+        cleaned = re.sub(f"^{prefix}", "", cleaned)
+        
+    # Replace underscores with spaces and Title Case
+    cleaned = cleaned.replace('_', ' ').title().strip()
+    
+    return cleaned
+
+def clean_location_name(location_name):
+    """
+    Cleans a location name to Title Case.
+    Most GDELT locations are already readable (e.g., "Paris"), just need formatting.
+    """
+    if not location_name:
+        return ""
+    
+    # Remove count if present
+    if ':' in location_name:
+        parts = location_name.split(':')
+        location_name = parts[0]
+        
+    return location_name.title()
+
 # ============================================================================
 # GDELT DATA FETCHING AND PROCESSING
 # ============================================================================
@@ -350,10 +401,22 @@ def process_file(url, is_translation_stream=False):
                             row_data['first_count_type'] = None
                             row_data['first_count_number'] = None
                     
-                    # V2Themes is at index 8
                     if EXTRACT_CONFIG['themes'] and 8 < len(cols):
                         themes = parse_v2_themes(cols[8])
-                        row_data['themes'] = ';'.join(themes[:5]) if themes else None  # First 5 themes
+                        if themes:
+                            # Raw: just join the original themes
+                            row_data['themes_raw'] = ';'.join(themes)
+                            
+                            # Clean: apply cleaning
+                            cleaned_themes = []
+                            for t in themes[:5]: # Process top 5 themes for clean version
+                                clean = clean_theme_name(t)
+                                if clean and clean not in cleaned_themes:
+                                    cleaned_themes.append(clean)
+                            row_data['themes'] = ';'.join(cleaned_themes) if cleaned_themes else None
+                        else:
+                            row_data['themes'] = None
+                            row_data['themes_raw'] = None
                     
                     # V2Locations has # delimiters and numeric coordinates
                     if EXTRACT_CONFIG['locations']:
@@ -370,21 +433,43 @@ def process_file(url, is_translation_stream=False):
                                         EXTRACT_CONFIG['location_limit']
                                     )
                                     if locations:
-                                        row_data['location_names'] = ';'.join([loc['name'] for loc in locations])
+                                        # Raw: original names
+                                        row_data['location_names_raw'] = ';'.join([loc['name'] for loc in locations])
+                                        
+                                        # Clean: apply cleaning
+                                        cleaned_loc_names = []
+                                        for loc in locations:
+                                            clean = clean_location_name(loc['name'])
+                                            if clean and clean not in cleaned_loc_names:
+                                                cleaned_loc_names.append(clean)
+                                        
+                                        row_data['location_names'] = ';'.join(cleaned_loc_names)
                                         row_data['location_countries'] = ';'.join([loc['country_code'] for loc in locations])
                                         if EXTRACT_CONFIG['extract_coordinates'] and locations[0].get('lat'):
                                             row_data['first_location_lat'] = locations[0]['lat']
                                             row_data['first_location_lon'] = locations[0]['lon']
-                                        break
+                                    break
                                         
                     # V2Persons, Organizations, Tone skipped based on config
                     
                     rows.append(row_data)
         
-        # Create native DataFrame (original titles)
-        df_native = pd.DataFrame(rows)
+        # Create raw DataFrame (original titles, raw themes, raw locations)
+        # We need to copy relevant fields
+        rows_raw = []
+        for r in rows:
+            raw_row = r.copy()
+            # Restore raw fields to main names for the raw file
+            if 'themes_raw' in r:
+                raw_row['themes'] = r['themes_raw']
+            if 'location_names_raw' in r:
+                raw_row['location_names'] = r['location_names_raw']
+            rows_raw.append(raw_row)
+            
+        df_raw = pd.DataFrame(rows_raw)
         
         # Translate titles if this is from translation stream (parallel translation for speed)
+        # Only for the main 'rows' list which goes to news.csv
         if is_translation_stream and rows:
             print(f"  [Translating {len(rows)} titles in parallel...]")
             titles_to_translate = []
@@ -452,16 +537,55 @@ def process_file(url, is_translation_stream=False):
                          
         print(f"Extracted {len(df_english)} rows.")
         
-        if not df_native.empty:
-            # Apply same column order to native dataframe
-            df_native = df_native[column_order]
-            header_native = not pd.io.common.file_exists(ARCHIVE_FILE_NATIVE)
-            df_native.to_csv(ARCHIVE_FILE_NATIVE, mode='a', header=header_native, index=False)
+        if not df_raw.empty:
+            # Apply same column order to raw dataframe
+            df_raw = df_raw[column_order]
+            header_raw = not pd.io.common.file_exists(ARCHIVE_FILE_RAW)
+            df_raw.to_csv(ARCHIVE_FILE_RAW, mode='a', header=header_raw, index=False)
         
         if not df_english.empty:
             header_english = not pd.io.common.file_exists(ARCHIVE_FILE)
             df_english.to_csv(ARCHIVE_FILE, mode='a', header=header_english, index=False)
-            print(f"Success. Appended to {ARCHIVE_FILE} (English) and {ARCHIVE_FILE_NATIVE} (Native)")
+            print(f"Success. Appended to {ARCHIVE_FILE} (Cleaned/Translated) and {ARCHIVE_FILE_RAW} (Raw/Original)")
+            
+            # --- Vector DB Integration ---
+            try:
+                # We need to import here to avoid circular dependencies if any, 
+                # or just to keep it isolated.
+                # Adjust path to ensure we can import vector_db
+                import sys
+                import os
+                # current_dir is server/
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                if current_dir not in sys.path:
+                    sys.path.append(current_dir)
+                    
+                from db_handle.vector_db import VectorDB
+                
+                print("  [Ingesting into Vector DB...]")
+                db = VectorDB()
+                
+                # Convert DataFrame to list of dicts for ingestion
+                # We need to map df columns to what add_articles expects
+                articles_to_ingest = []
+                for _, row in df_english.iterrows():
+                    articles_to_ingest.append({
+                        'title': row.get('title', ''),
+                        'url': row.get('url', ''),
+                        'date': str(row.get('date', '')),
+                        'themes': row.get('themes', ''),
+                        'location_names': row.get('location_names', '')
+                    })
+                
+                db.add_articles(articles_to_ingest)
+                print(f"  [Successfully ingested {len(articles_to_ingest)} articles into Vector DB]")
+                
+            except Exception as e:
+                print(f"  [Warning: Vector DB Ingestion Failed: {e}]")
+                # Don't fail the whole pipeline just because DB ingest failed
+                pass
+            # -----------------------------
+            
             return True
         return False
         
@@ -476,8 +600,8 @@ def run_pipeline():
     last_processed_orig = None
     
     print("--- Starting GDELT 15-Minute Mass News Pipeline ---")
-    print(f"English Titles (all articles): {ARCHIVE_FILE}")
-    print(f"Native Titles (all articles): {ARCHIVE_FILE_NATIVE}")
+    print(f"English Titles (Cleaned): {ARCHIVE_FILE}")
+    print(f"Raw Data (Original): {ARCHIVE_FILE_RAW}")
     print("---------------------------------------------------")
     
     while True:

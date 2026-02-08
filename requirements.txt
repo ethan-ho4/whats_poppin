@@ -2,7 +2,7 @@
 fastapi
 uvicorn[standard]
 
-# AI Assistant & Chat
+# AI & LLM
 openai
 # Note: backboard is listed but user has been trying to uninstall it. I will leave it if required, but maybe comment it out if it's not used? User has a running command to uninstall it. Let's keep it for now but maybe I should check if it's used. The user script uses openai directly now.
 # backboard 
@@ -10,6 +10,12 @@ openai
 # Data Processing
 pandas
 numpy
+
+# Vector Database
+chromadb
+
+# Article Translation & Retrieval
+deep_translator
 
 # HTTP Requests
 requests
@@ -23,7 +29,7 @@ sentence-transformers
 # However, putting the index-url in requirements.txt can be tricky for some parsers, but pip handles it.
 torch --index-url https://download.pytorch.org/whl/cpu
 
-# Spelling Correction
+# Utility
 pyspellchecker
 
 # Async Support
