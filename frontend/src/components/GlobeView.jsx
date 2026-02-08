@@ -261,6 +261,10 @@ function GlobeView({ onBackToHome }) {
                                     <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>S</span>
                                     <span>Toggle Spin</span>
                                 </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>A</span>
+                                    <span>Ascend to Space</span>
+                                </div>
                             </div>
                         </motion.div>
                     )}

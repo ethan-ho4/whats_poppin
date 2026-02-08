@@ -1,12 +1,25 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Globe from 'react-globe.gl';
 import { countryNews } from '../data/mockData';
+import * as THREE from 'three';
 
 const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
     const globeEl = useRef();
     const [countries, setCountries] = useState({ features: [] });
     const [hoverD, setHoverD] = useState(null);
     const [visibleData, setVisibleData] = useState([]);
+
+    // New state for the "No Articles Found" message
+    const [showNoDataMessage, setShowNoDataMessage] = useState(false);
+
+    // Styling for countries
+    const getPolygonLabel = (d) => `
+    <div style="background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; color: white;">
+      <b>${d.properties.ADMIN}</b> (${d.properties.ISO_A3})
+      <br />
+      ${countryNews[d.properties.ISO_A3] ? 'Click for news' : 'No news available'}
+    </div>
+  `;
 
     // Memoize all points and top points
     const { allPoints, topPoints } = useMemo(() => {
@@ -176,7 +189,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
 
     const userLocationRef = useRef(null);
 
-    // Geolocation and 'c' key listener
+    // Geolocation and 'c', 's', 'a' key listener
     useEffect(() => {
         // 1. Get User Location
         if (navigator.geolocation) {
@@ -191,28 +204,27 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
             );
         }
 
-        // 2. Listen for 'c' and 's' keys
+        // 2. Listen for keys
         const handleKeyDown = (e) => {
             const key = e.key.toLowerCase();
 
             // 'c' key: Home to user location
             if (key === 'c') {
+                setShowNoDataMessage(false); // Reset message on navigation
                 const loc = userLocationRef.current;
                 if (loc && globeEl.current) {
-                    // Stop auto-rotation temporarily for the flight
                     const controls = globeEl.current.controls();
                     if (controls) {
                         controls.autoRotate = false;
+                        controls.target.set(0, 0, 0);
+                        controls.update();
                     }
-
-                    // Fly to location
                     globeEl.current.pointOfView({
                         lat: loc.lat,
                         lng: loc.lng,
-                        altitude: 1.5 // Zoom out a bit or keep current? Let's use a nice view altitude
-                    }, 1500); // 1.5s flight time
+                        altitude: 1.5
+                    }, 1500);
 
-                    // Resume slow spin after flight
                     setTimeout(() => {
                         if (globeEl.current) {
                             const c = globeEl.current.controls();
@@ -237,6 +249,141 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                     }
                 }
             }
+
+            // 'a' key: Accelerate spin, zoom out, then look into space
+            if (key === 'a') {
+                setShowNoDataMessage(false); // Reset message at start
+                if (globeEl.current) {
+                    const controls = globeEl.current.controls();
+                    const camera = globeEl.current.camera();
+
+                    if (controls && camera) {
+                        const startPos = camera.position.clone();
+                        const startRotation = camera.rotation.clone();
+                        const startTime = Date.now();
+                        const animationDuration = 2500; // 2.5 seconds total
+
+                        // Disable controls completely
+                        controls.enabled = false;
+
+                        const spherical = new THREE.Spherical();
+                        spherical.setFromVector3(camera.position);
+
+                        const animateAll = () => {
+                            const elapsed = Date.now() - startTime;
+                            // Ensure progress doesn't exceed 1
+                            const progress = Math.min(elapsed / animationDuration, 1);
+
+                            // 1. Zoom out - increase radius (altitude)
+                            const extraRadius = progress * 800; // Adjust multiplier as needed for zoom extent
+
+                            // 2. Eased Progress
+                            const timeInSeconds = progress * 2.5;
+                            let rawProgress;
+                            if (timeInSeconds <= 2.0) {
+                                rawProgress = 3 * timeInSeconds * timeInSeconds;
+                            } else {
+                                const dt = timeInSeconds - 2.0;
+                                rawProgress = 12 + (12 * dt) - (0.5 * 24 * dt * dt);
+                            }
+                            const maxVal = 15;
+                            const easedProgress = Math.min(rawProgress / maxVal, 1.0);
+
+                            // 3. Globe Spin
+                            const totalSpinRadians = 0.5;
+                            // Re-initialize from startPos + extraRadius
+                            spherical.setFromVector3(startPos);
+                            spherical.radius += extraRadius;
+                            spherical.theta -= easedProgress * totalSpinRadians;
+
+                            camera.position.setFromSpherical(spherical);
+                            camera.lookAt(0, 0, 0);
+
+                            // 4. Turn Away (Camera Rotation)
+                            // Rotate camera 90 degrees (turn away left to right)
+                            camera.rotateY(Math.PI / 2 * easedProgress);
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animateAll);
+                            } else {
+                                controls.enabled = false;
+                                controls.autoRotate = false;
+                                // Animation complete - SHOW MESSAGE
+                                setShowNoDataMessage(true);
+                            }
+                        };
+                        animateAll();
+                    }
+                }
+            }
+
+            // SPACE key: Return to Earth (Smooth Transition)
+            if (key === ' ') {
+                if (globeEl.current) {
+                    setShowNoDataMessage(false);
+                    const controls = globeEl.current.controls();
+                    const camera = globeEl.current.camera();
+
+                    if (controls && camera) {
+                        controls.enabled = false;
+                        controls.autoRotate = false;
+
+                        // 1. Capture Start State
+                        const startPos = camera.position.clone();
+
+                        // Get current look direction
+                        const forward = new THREE.Vector3();
+                        camera.getWorldDirection(forward);
+                        // Current target is roughly position + forward distance
+                        // But for interpolation, we can just say we are looking at (pos + forward)
+                        const startTarget = startPos.clone().add(forward);
+
+                        // 2. Define End State
+                        // We want to end up looking at 0,0,0 from a position close to Earth
+                        // preserving the general angle "inward"
+                        const endTarget = new THREE.Vector3(0, 0, 0);
+
+                        // Calculate end position: same direction from center, but closer
+                        // Spherical calc to find "surface" position at current angle
+                        const spherical = new THREE.Spherical();
+                        spherical.setFromVector3(startPos);
+                        spherical.radius = 250; // Target altitude (~1.7)
+                        const endPos = new THREE.Vector3().setFromSpherical(spherical);
+
+                        const startTime = Date.now();
+                        const duration = 2000;
+
+                        const animateReturn = () => {
+                            const elapsed = Date.now() - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+
+                            // Easing: Quadratic In/Out
+                            const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+                            // Interpolate Position
+                            const currentPos = new THREE.Vector3().lerpVectors(startPos, endPos, ease);
+                            camera.position.copy(currentPos);
+
+                            // Interpolate LookAt Target
+                            // We need to look at a moving point between startTarget and (0,0,0)
+                            const currentTarget = new THREE.Vector3().lerpVectors(startTarget, endTarget, ease);
+                            camera.lookAt(currentTarget);
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animateReturn);
+                            } else {
+                                // Animation complete
+                                controls.enabled = true;
+                                controls.autoRotate = true;
+                                controls.autoRotateSpeed = 0.35;
+                                controls.target.set(0, 0, 0);
+                                controls.update();
+                            }
+                        };
+                        animateReturn();
+                    }
+                }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -245,15 +392,6 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, []);
-
-    // Styling for countries
-    const getPolygonLabel = (d) => `
-    <div style="background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; color: white;">
-      <b>${d.properties.ADMIN}</b> (${d.properties.ISO_A3})
-      <br />
-      ${countryNews[d.properties.ISO_A3] ? 'Click for news' : 'No news available'}
-    </div>
-  `;
 
     // Window resize handling
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -270,7 +408,28 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
     }, []);
 
     return (
-        <div className="cursor-move">
+        <div className="cursor-move relative">
+            {showNoDataMessage && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    color: 'white',
+                    zIndex: 1000,
+                    pointerEvents: 'none',
+                    textAlign: 'center',
+                    fontFamily: 'sans-serif',
+                    textShadow: '0 0 20px rgba(0,0,0,0.8)',
+                }}>
+                    <div style={{ fontSize: '4rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                        no article found lol
+                    </div>
+                    <div style={{ fontSize: '1.5rem', opacity: 0.8 }}>
+                        press space bar to go back
+                    </div>
+                </div>
+            )}
             <Globe
                 ref={globeEl}
                 width={dimensions.width}
@@ -301,11 +460,11 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                 pointAltitude={0.07}
                 pointRadius={0.4}
                 pointLabel={d => `
-                    <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2);">
-                        <div style="font-weight: bold; margin-bottom: 4px;">${d.title}</div>
-                        <div style="font-size: 0.8em; opacity: 0.8;">${d.locationLabels}</div>
-                    </div>
-                `}
+                        <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2);">
+                            <div style="font-weight: bold; margin-bottom: 4px;">${d.title}</div>
+                            <div style="font-size: 0.8em; opacity: 0.8;">${d.locationLabels}</div>
+                        </div>
+                    `}
                 onPointClick={(d) => {
                     console.log('Point Clicked:', d.title);
                     const country = countries.features.find(c => c.properties.ISO_A3 === d.isoCode);
