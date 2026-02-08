@@ -158,3 +158,14 @@ class SupabaseClient:
         except Exception as e:
             print(f"Error searching topic: {e}")
             return []
+
+    def delete_article_by_url(self, url):
+        """
+        Delete an article by its URL.
+        """
+        try:
+            response = self.supabase.table("articles").delete().eq("url", url).execute()
+            return response
+        except Exception as e:
+            print(f"Error deleting article: {e}")
+            return None

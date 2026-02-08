@@ -477,10 +477,24 @@ def process_file(url, is_translation_stream=False):
             
             for idx, row in enumerate(rows):
                 if row.get('title'):
-                    # Decode HTML entities to get actual characters
+                    # Decode HTML entities
                     decoded_title = html.unescape(row['title'])
-                    titles_to_translate.append(decoded_title)
-                    title_indices.append(idx)
+                    
+                    # Determine if translation is needed
+                    should_translate = is_translation_stream
+                    
+                    # Heuristic: Check for non-English characters in "Original" stream
+                    if not should_translate:
+                        # Count non-ASCII characters
+                        non_ascii_count = sum(1 for c in decoded_title if ord(c) > 127)
+                        # If more than 20% of chars are non-ASCII, assume it's foreign (e.g. Chinese, Arabic)
+                        if len(decoded_title) > 0 and (non_ascii_count / len(decoded_title)) > 0.2:
+                            should_translate = True
+                            print(f"  [Detected non-English title in English stream: {decoded_title[:40]}...]")
+
+                    if should_translate:
+                        titles_to_translate.append(decoded_title)
+                        title_indices.append(idx)
             
             if titles_to_translate:
                 def translate_single(title):
