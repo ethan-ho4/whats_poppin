@@ -89,7 +89,7 @@ def search_articles(query: str, match_threshold: float, match_count: int):
             # We fetch all IDs at once which is much faster than serial chunks
             try:
                 details_response = client.supabase.table("articles") \
-                    .select("id, location_names, location_countries, first_location_lat, first_location_lon") \
+                    .select("id, location_names, location_countries, first_location_lat, first_location_lon, themes") \
                     .in_("id", article_ids) \
                     .execute()
                 # Update lookup map
@@ -98,7 +98,8 @@ def search_articles(query: str, match_threshold: float, match_count: int):
                         'country': item.get('location_names', ''),
                         'country_code': item.get('location_countries', ''),
                         'lat': item.get('first_location_lat'),
-                        'lon': item.get('first_location_lon')
+                        'lon': item.get('first_location_lon'),
+                        'themes': item.get('themes', '')
                     }
             except Exception as ex:
                 print(f"Error fetching article batch details: {ex}")
@@ -119,6 +120,7 @@ def search_articles(query: str, match_threshold: float, match_count: int):
             "country_code": details.get('country_code', ''),
             "lat": details.get('lat'),
             "lon": details.get('lon'),
+            "themes": details.get('themes', ''),
             "similarity": row.get('similarity', 0)
         })
         
@@ -147,7 +149,7 @@ def save_results_to_csv(results, output_csv="search_results.csv"):
             
         with open(output_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(['Title', 'Link', 'Country', 'Date', 'Latitude', 'Longitude', 'Similarity']) # Header
+            writer.writerow(['Title', 'Link', 'Country', 'Date', 'Latitude', 'Longitude', 'Similarity', 'Themes']) # Header
             for row in results:
                 writer.writerow([
                     row.get('title', 'Unknown Title'), 
@@ -156,7 +158,8 @@ def save_results_to_csv(results, output_csv="search_results.csv"):
                     row.get('date', ''),
                     row.get('lat', ''),
                     row.get('lon', ''),
-                    row.get('similarity', 0)
+                    row.get('similarity', 0),
+                    row.get('themes', '')
                 ])
         
         print(f"Results saved to: {output_csv_path}")
