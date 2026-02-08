@@ -1,4 +1,4 @@
-from fuzzy_search import fuzzy_search
+from server.fuzzy_search import fuzzy_search
 
 async def handle_chat(query: str):
     """

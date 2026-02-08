@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from model.chat import get_chat_response
 
 import pandas as pd
 import os
@@ -49,7 +48,7 @@ def get_news(filter: str = None):
         return [item for item in news_items if filter.lower() in item["category"].lower() or filter.lower() in item["title"].lower()]
     return news_items
 
-from main_functions import handle_chat
+from server.main_functions import handle_chat
 
 # ... existing code ...
 
