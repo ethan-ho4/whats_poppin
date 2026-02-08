@@ -37,3 +37,6 @@ asyncio
 
 # Database
 supabase
+# Scraping & Metadata
+newspaper4k
+lxml[html_clean]

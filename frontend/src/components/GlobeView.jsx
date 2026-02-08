@@ -8,31 +8,69 @@ import { fipsToIso3 } from '../utils/countryMapping';
 
 
 
+
+
+
 const NewsCard = ({ article }) => {
-    // For now, we use a placeholder logic since backend scraping is disconnected
-    // If article already has image_url (from CSV or DB), we use it. 
-    // Otherwise, we show a themed placeholder based on the article title/topic.
+    // Discord-style "Unfurling" logic:
+    // 1. Backend Scrape (newspaper4k) for the actual Cover Image
+    // 2. Fallback to clean icon (no synthetic placeholders)
     const [imageUrl, setImageUrl] = useState(article.image_url || null);
     const [loadingImage, setLoadingImage] = useState(!article.image_url);
+    const [isIntersecting, setIntersecting] = useState(false);
+    const cardRef = useRef(null);
 
     useEffect(() => {
-        if (article.image_url) return;
-        
-        // Simulating a lazy load for the placeholder to'test' shimmer UI
-        const timer = setTimeout(() => {
-            // Using a high-quality random news-related image as a temporary placeholder
-            const randomId = Math.floor(Math.random() * 1000);
-            setImageUrl(`https://picsum.photos/seed/${randomId}/400/200`);
-            setLoadingImage(false);
-        }, 800);
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIntersecting(true);
+                    observer.unobserve(entry.target);
+                }
+            },
+            { threshold: 0.1 }
+        );
 
-        return () => clearTimeout(timer);
-    }, [article.url, article.image_url]);
+        if (cardRef.current) {
+            observer.observe(cardRef.current);
+        }
+
+        return () => {
+            if (cardRef.current) {
+                observer.unobserve(cardRef.current);
+            }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (article.image_url || !isIntersecting) return;
+        
+        const unfurlLink = async () => {
+            setLoadingImage(true);
+            try {
+                // Call our own backend unfurler
+                const res = await fetch(`http://localhost:8000/unfurl?url=${encodeURIComponent(article.url)}`);
+                const data = await res.json();
+                
+                if (data.image) {
+                    setImageUrl(data.image);
+                }
+            } catch (err) {
+                console.error("Unfurl error:", err);
+            }
+            setLoadingImage(false);
+        };
+
+        unfurlLink();
+    }, [article.url, article.image_url, isIntersecting]);
+
 
     return (
         <div 
+            ref={cardRef}
             className="bg-white/5 hover:bg-white/10 transition-all duration-300 group cursor-pointer w-full" 
             style={{ 
+                width: '100%',
                 border: '1px solid rgba(255, 255, 255, 0.15)', 
                 borderRadius: '16px', 
                 marginBottom: '1.25rem',
@@ -526,14 +564,14 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                             flexDirection: 'column',
                             alignItems: 'flex-start',
                             justifyContent: 'flex-start',
-                            padding: '2rem',
                             borderRight: '1px solid rgba(255, 255, 255, 0.5)',
                             borderTop: '1px solid rgba(255, 255, 255, 0.5)',
                             borderBottom: '1px solid rgba(255, 255, 255, 0.5)',
                             boxShadow: '0 0 50px rgba(0,0,0,0.5)',
                             overflowY: 'auto',
                             overflowX: 'hidden',
-                            boxSizing: 'border-box'
+                            boxSizing: 'border-box',
+                            padding: '2.5rem 1.5rem'
                         }}>
 
                         <button
@@ -550,20 +588,34 @@ function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, l
                             <X size={24} />
                         </button>
 
-                        <div className="flex flex-col items-start px-2 mt-8">
-
-                            <div style={{ color: 'white', fontWeight: 'bold', fontSize: '2rem', textAlign: 'left', lineHeight: '1.1', textTransform: 'uppercase' }}>
+                        <div className="flex flex-col items-stretch mt-4">
+                            <div style={{ 
+                                color: 'white', 
+                                fontWeight: 'bold', 
+                                fontSize: '2.25rem', 
+                                textAlign: 'left', 
+                                lineHeight: '1.1', 
+                                textTransform: 'uppercase',
+                                wordBreak: 'break-word',
+                                hyphens: 'auto'
+                            }}>
                                 {countryName || selectedCountry}
                             </div>
                         </div>
 
-                        <div className="w-full pr-2" style={{ pointerEvents: 'auto', marginTop: '1.5rem' }}>
+                        <div className="w-full" style={{ pointerEvents: 'auto', marginTop: '2rem' }}>
                             {(() => {
                                 const displayNews = activeNewsPoints.filter(article => {
+                                    const isUSMaster = selectedCountry === 'USA' || countryName?.includes('United States') || countryName === 'USA';
+                                    const articleCountry = article.country?.toLowerCase() || '';
+                                    const isArticleUS = articleCountry.includes('united states') || articleCountry === 'usa' || article.country_code === 'US';
+
                                     const mappedIso = fipsToIso3[article.country_code];
+                                    
                                     return mappedIso === selectedCountry || 
                                            article.country_code === selectedCountry ||
-                                           article.country?.toLowerCase().includes(countryName?.toLowerCase());
+                                           (isUSMaster && isArticleUS) ||
+                                           articleCountry.includes(countryName?.toLowerCase());
                                 });
 
                                 return displayNews.length > 0 ? (

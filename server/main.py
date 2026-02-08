@@ -105,5 +105,44 @@ async def chat(query: str):
     # 4. Send the result back to the frontend
     return {"response": response}
 
+# --- Metadata Unfurling Service ---
+from newspaper import Article
+
+# Basic in-memory cache for unfurled metadata
+UNFURL_CACHE = {}
+
+@app.get("/unfurl")
+async def unfurl(url: str):
+    """
+    Discord-style metadata extraction. 
+    Grabs the cover image for a given news URL.
+    """
+    if not url:
+        return {"error": "URL is required"}
+    
+    if url in UNFURL_CACHE:
+        return UNFURL_CACHE[url]
+
+    try:
+        # newspaper4k is great for finding the 'top_image' correctly
+        article = Article(url)
+        article.download()
+        article.parse()
+        
+        result = {
+            "title": article.title,
+            "image": article.top_image if article.top_image else None,
+            "summary": article.meta_description if article.meta_description else article.summary[:200] if article.summary else None
+        }
+        
+        # Don't cache failures or empty results indefinitely
+        if result["image"]:
+            UNFURL_CACHE[url] = result
+            
+        return result
+    except Exception as e:
+        print(f"Error unfurling {url}: {e}")
+        return {"error": str(e), "image": None}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
