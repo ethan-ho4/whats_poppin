@@ -6,16 +6,16 @@ from backboard import BackboardClient
 async def main():
     # Load environment variables
     load_dotenv()
-    TOKEN = os.getenv("TOKEN")
+    BB_TOKEN = os.getenv("BB_TOKEN")
     
-    if not TOKEN:
-        print("Error: TOKEN not found in .env file.")
+    if not BB_TOKEN:
+        print("Error: BB_TOKEN not found in .env file.")
         return
     
-    print(f"Token loaded successfully: {TOKEN[:5]}...")
+    print(f"Token loaded successfully: {BB_TOKEN[:5]}...")
     
     # Initialize the Backboard client
-    client = BackboardClient(api_key=TOKEN)
+    client = BackboardClient(api_key=BB_TOKEN)
 
     # Create an assistant
     print("\nCreating assistant...")

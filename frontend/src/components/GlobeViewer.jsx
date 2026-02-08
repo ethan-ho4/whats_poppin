@@ -150,6 +150,60 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
         }
     }, [selectedCountry, countries]);
 
+    // Entrance animation: Spin fast then slow down + Center on location
+    useEffect(() => {
+        const controls = globeEl.current?.controls();
+        if (controls) {
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 120; // Very fast burst
+
+            let isSlowedDown = false;
+            let userLocation = null;
+            let hasCentered = false;
+
+            const attemptCenter = () => {
+                if (isSlowedDown && userLocation && !hasCentered && globeEl.current) {
+                    hasCentered = true;
+                    globeEl.current.pointOfView({
+                        lat: userLocation.lat,
+                        lng: userLocation.lng,
+                        altitude: 2.5 // Standard zoom distance
+                    });
+                }
+            };
+
+            // Attempt to get user location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        attemptCenter();
+                    },
+                    (error) => {
+                        console.warn("Geolocation access denied or failed", error);
+                    }
+                );
+            }
+
+            // Slow down logic
+            const timer = setTimeout(() => {
+                if (globeEl.current) {
+                    const currentControls = globeEl.current.controls();
+                    if (currentControls) {
+                        currentControls.autoRotateSpeed = 0.35; // Very slow maintenance spin
+                    }
+                    isSlowedDown = true;
+                    attemptCenter();
+                }
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
     // Styling for countries
     const getPolygonLabel = (d) => `
     <div style="background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 4px; color: white;">
@@ -184,11 +238,9 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry }) => {
                 lineHoverPrecision={0}
 
                 polygonsData={countries.features}
-                polygonAltitude={d => d === hoverD ? 0.12 : (d.properties.ISO_A3 === selectedCountry ? 0.06 : 0.01)}
+                polygonAltitude={d => (d.properties.ISO_A3 === selectedCountry ? 0.06 : 0.01)}
                 polygonCapColor={d =>
-                    d === hoverD
-                        ? 'rgba(100, 200, 255, 0.6)'
-                        : (d.properties.ISO_A3 === selectedCountry ? 'rgba(56, 189, 248, 0.8)' : 'rgba(200, 200, 200, 0.1)')
+                    (d.properties.ISO_A3 === selectedCountry ? 'rgba(56, 189, 248, 0.8)' : 'rgba(200, 200, 200, 0.1)')
                 }
                 polygonSideColor={() => 'rgba(0, 50, 80, 0.4)'}
                 polygonStrokeColor={() => '#111'}
