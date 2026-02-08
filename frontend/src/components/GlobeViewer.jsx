@@ -3,7 +3,7 @@ import Globe from 'react-globe.gl';
 import * as THREE from 'three';
 import { fipsToIso3 } from '../utils/countryMapping';
 
-const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) => {
+const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [], onPointsRendered }) => {
     const globeEl = useRef();
     const [countries, setCountries] = useState({ features: [] });
     const [hoverD, setHoverD] = useState(null);
@@ -118,6 +118,13 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
         // Initialize visible data
         setVisibleData(topPoints);
     }, [topPoints]);
+
+    // Notify parent of rendered points count
+    useEffect(() => {
+        if (onPointsRendered) {
+            onPointsRendered(visibleData.length);
+        }
+    }, [visibleData, onPointsRendered]);
 
     // Setup controls listener
     useEffect(() => {
