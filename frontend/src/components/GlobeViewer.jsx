@@ -191,6 +191,8 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
         }
     }, []);
 
+    // Smart Rotation removed as per user request
+
     const userLocationRef = useRef(null);
     const isAnimatingRef = useRef(false);
 
@@ -475,7 +477,7 @@ const GlobeViewer = ({ onCountrySelect, selectedCountry, dynamicPoints = [] }) =
                 pointAltitude={0.02}
                 pointRadius={0.4}
                 pointLabel={d => `
-                        <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2);">
+                        <div style="background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 6px; color: white; border: 1px solid rgba(255,255,255,0.2); font-family: 'Moon', sans-serif;">
                             <div style="font-weight: bold; margin-bottom: 4px;">${d.title}</div>
                             <div style="font-size: 0.8em; opacity: 0.8;">${d.locationLabels}</div>
                         </div>

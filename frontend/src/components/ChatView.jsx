@@ -3,40 +3,33 @@ import ParticleWave from './ParticleWave';
 
 
 
-function ChatView({ onEnter, onTopicSelect }) {
-    const [selectedTopic, setSelectedTopic] = useState(null);
+function ChatView({ onEnter, onTopicSelect, selectedTopic }) {
+    // Note: selectedTopic prop comes from App, but we also have local state? 
+    // App passes selectedTopic now. We should use it for styling.
+    // We can remove local selectedTopic state if we want to rely on parent, 
+    // but ChatView might be unmounted/remounted. 
+    // Actually, App preserves state. 
+    // Let's use a local state for immediate feedback if needed, but prop is better for sync.
+    // However, the previous code had local state `const [selectedTopic, setSelectedTopic] = useState(null);`
+    // We'll prioritize the prop.
+    
     const [query, setQuery] = useState('');
     const [response, setResponse] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const topics = ['Technology', 'Business', 'Sports', 'Entertainment', 'Science'];
 
     const handleTopicClick = (topic) => {
-        setSelectedTopic(topic);
-
-        // Navigate immediately
+        // Just notify parent. Parent handles loading, fetching, and navigation.
         if (onTopicSelect) {
             onTopicSelect(topic);
         }
-        onEnter();
-
-        // Fetch data in background (non-blocking)
-        fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
-            .then(response => response.json())
-            .then(data => {
-                // Data will be available for GlobeView to use
-                // The new structure is array: [{ title, url, ... }, ...]
-                console.log('News loaded for', topic, data);
-            })
-            .catch(error => {
-                console.error('Error fetching news:', error);
-            });
     };
 
     const handleSearch = async () => {
         if (!query.trim()) return;
 
-        setLoading(true);
+        setLocalLoading(true);
         setResponse(null);
         try {
             // Updated to use /news endpoint which now returns a list of articles directly
@@ -57,7 +50,7 @@ function ChatView({ onEnter, onTopicSelect }) {
             console.error("Error fetching news:", error);
             setResponse("Error connecting to server.");
         } finally {
-            setLoading(false);
+            setLocalLoading(false);
         }
     };
 
@@ -103,32 +96,33 @@ function ChatView({ onEnter, onTopicSelect }) {
                 }}>
                     What's Poppin
                 </h1>
-
-                {/* Topic Links - Centered */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: '2', justifyContent: 'center' }}>
+                
+                {/* Topics */}
+                <div style={{ display: 'flex', gap: '1rem', flex: '2', justifyContent: 'center', alignItems: 'center' }}>
                     {topics.map((topic, index) => (
                         <React.Fragment key={topic}>
-                            <span
+                            <span 
                                 onClick={() => handleTopicClick(topic)}
                                 style={{
-                                    fontSize: '0.95rem',
-                                    fontFamily: '"Moon", sans-serif',
-                                    color: selectedTopic === topic ? '#3B82F6' : '#D1D5DB',
                                     cursor: 'pointer',
+                                    color: selectedTopic === topic ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                                    fontWeight: selectedTopic === topic ? 'bold' : 'normal',
                                     transition: 'color 0.2s',
-                                    fontWeight: selectedTopic === topic ? '600' : '400'
+                                    fontFamily: '"Moon", sans-serif',
+                                    fontSize: '0.9rem',
+                                    textShadow: selectedTopic === topic ? '0 0 10px rgba(255,255,255,0.5)' : 'none'
                                 }}
                                 onMouseOver={(e) => {
                                     if (selectedTopic !== topic) e.target.style.color = 'white';
                                 }}
                                 onMouseOut={(e) => {
-                                    if (selectedTopic !== topic) e.target.style.color = '#D1D5DB';
+                                    if (selectedTopic !== topic) e.target.style.color = 'rgba(255, 255, 255, 0.7)';
                                 }}
                             >
                                 {topic}
                             </span>
                             {index < topics.length - 1 && (
-                                <span style={{ color: '#D1D5DB', fontSize: '0.95rem' }}>/</span>
+                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.9rem' }}>/</span>
                             )}
                         </React.Fragment>
                     ))}
@@ -274,7 +268,7 @@ function ChatView({ onEnter, onTopicSelect }) {
                             e.target.style.color = query ? '#3B82F6' : '#64748B';
                         }}
                     >
-                        {loading ? (
+                        {localLoading ? (
                             <div style={{
                                 width: '20px',
                                 height: '20px',

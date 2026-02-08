@@ -38,7 +38,8 @@ const NewsCard = ({ article }) => {
                 marginBottom: '1.25rem',
                 boxSizing: 'border-box',
                 overflow: 'hidden',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                fontFamily: '"Moon", sans-serif'
             }}
             onClick={() => article.url && window.open(article.url, '_blank')}
         >
@@ -102,30 +103,59 @@ const NewsCard = ({ article }) => {
     );
 };
 
-function GlobeView({ onBackToHome }) {
+function GlobeView({ onBackToHome, selectedTopic, onTopicChange, filteredNews, loading, setLoading }) {
     const [selectedCountry, setSelectedCountry] = useState(null);
     const [countryName, setCountryName] = useState(null);
     const [showNavbar, setShowNavbar] = useState(false);
     const [showLegend, setShowLegend] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState(null);
+    // Removed local selectedTopic state to rely on prop from App
+    
     const [activeNewsPoints, setActiveNewsPoints] = useState([]);
     const lastMouseY = useRef(0);
     const hideTimeoutRef = useRef(null);
 
+    // Sync activeNewsPoints with filteredNews prop from App
+    useEffect(() => {
+        if (filteredNews && filteredNews.length > 0) {
+            console.log('Syncing filteredNews to GlobeView:', filteredNews.length);
+            const points = filteredNews.filter(article => article.lat && (article.lon || article.lng));
+            setActiveNewsPoints(points);
+        } else if (!selectedTopic) {
+             // Optional: clear points if no topic selected? Or keep them?
+             // setActiveNewsPoints([]);
+        }
+    }, [filteredNews, selectedTopic]);
+
+    // Handle internal topic clicks (if user switches topic while in GlobeView)
     const handleTopicClick = (topic) => {
-        setSelectedTopic(topic);
-        
-        // Fetch news with topic filter
+        if (setLoading) setLoading(true);
+        if (onTopicChange) onTopicChange(topic, []); // Clear previous while loading
+
+        const startTime = Date.now();
+
         fetch(`http://localhost:8000/news?query=${encodeURIComponent(topic)}`)
             .then(response => response.json())
             .then(newsData => {
                 console.log('News loaded for', topic, newsData);
-                // Filter articles that have valid coordinates for the globe
-                const points = newsData.filter(article => article.lat && (article.lon || article.lng));
-                setActiveNewsPoints(points);
+                
+                // Ensure at least 1s loading time for the animation
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(0, 1000 - elapsedTime);
+
+                setTimeout(() => {
+                    if (onTopicChange) {
+                        onTopicChange(topic, newsData);
+                    } else {
+                        // Fallback if no prop (shouldn't happen with updated App)
+                         const points = newsData.filter(article => article.lat && (article.lon || article.lng));
+                         setActiveNewsPoints(points);
+                    }
+                    if (setLoading) setLoading(false);
+                }, remainingTime);
             })
             .catch(error => {
                 console.error('Error fetching news:', error);
+                 if (setLoading) setLoading(false);
             });
     };
 
@@ -143,16 +173,26 @@ function GlobeView({ onBackToHome }) {
     useEffect(() => {
         setShowNavbar(true);
 
-        // Hide after 3 seconds
-        const timeout = setTimeout(() => {
-            setShowNavbar(false);
-        }, 3000);
-
-        return () => clearTimeout(timeout);
-    }, []);
+        // Hide after 3 seconds, ONLY if no topic is selected
+        if (!selectedTopic) {
+            const timeout = setTimeout(() => {
+                setShowNavbar(false);
+            }, 3000);
+            return () => clearTimeout(timeout);
+        }
+    }, [selectedTopic]); // Re-run when selectedTopic changes
 
     useEffect(() => {
         const handleMouseMove = (e) => {
+            // If topic is selected, keep navbar shown and don't attach auto-hide logic
+            if (selectedTopic) {
+                setShowNavbar(true);
+                if (hideTimeoutRef.current) {
+                    clearTimeout(hideTimeoutRef.current);
+                }
+                return;
+            }
+
             const currentY = e.clientY;
 
             // Show navbar if mouse moves upward or is near the top
@@ -181,10 +221,10 @@ function GlobeView({ onBackToHome }) {
                 clearTimeout(hideTimeoutRef.current);
             }
         };
-    }, []);
+    }, [selectedTopic]); // Re-attach listener if topic selection changes
 
     return (
-        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000011', margin: 0, padding: 0, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000011', margin: 0, padding: 0, position: 'relative', overflow: 'hidden', fontFamily: '"Moon", sans-serif' }}>
 
             {/* Globe Container */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
@@ -194,6 +234,76 @@ function GlobeView({ onBackToHome }) {
                     dynamicPoints={activeNewsPoints}
                 />
             </div>
+
+            {/* Loading Indicator */}
+            <AnimatePresence>
+                {loading && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        style={{
+                            position: 'absolute',
+                            bottom: '3rem',
+                            left: '50%',
+                            x: '-50%', // Centering with x instead of transform to avoid conflict if we were animating x, but here we animate y. 
+                            // Wait, x prop in Framer Motion adds to transform. 
+                            // To be safe and cleaner, let's use the translateX in style but ensure we don't animate x.
+                            transform: 'translateX(-50%)', 
+                            zIndex: 2000,
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            padding: '1.5rem 3rem',
+                            background: 'rgba(20, 25, 40, 0.75)',
+                            backdropFilter: 'blur(24px) saturate(200%)',
+                            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '1rem',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                        }}
+                    >
+                        <div style={{
+                            width: '300px',
+                            height: '8px',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            borderRadius: '4px',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}>
+                            <motion.div
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #3B82F6, #EC4899, #3B82F6)',
+                                    backgroundSize: '200% 100%'
+                                }}
+                                animate={{
+                                    x: ['-100%', '100%']
+                                }}
+                                transition={{
+                                    repeat: Infinity,
+                                    duration: 1.5,
+                                    ease: 'linear'
+                                }}
+                            />
+                        </div>
+                        <div style={{
+                            fontFamily: '"Moon", sans-serif',
+                            color: 'rgba(255, 255, 255, 0.95)',
+                            fontSize: '0.9rem',
+                            letterSpacing: '1.5px',
+                            fontWeight: 'bold',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                        }}>
+                            ANALYZING GLOBAL DATA...
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Navbar */}
             <nav style={{
@@ -222,8 +332,10 @@ function GlobeView({ onBackToHome }) {
                     fontSize: '1.5rem',
                     fontWeight: 'bold',
                     color: 'white',
-                    flex: '1'
-                }}>
+                    fontFamily: '"Moon", sans-serif',
+                    flex: '1',
+                    cursor: 'pointer'
+                }} onClick={onBackToHome}>
                     What's Poppin
                 </h1>
 
@@ -235,11 +347,12 @@ function GlobeView({ onBackToHome }) {
                                 onClick={() => handleTopicClick(topic)}
                                 style={{
                                     fontSize: '0.95rem',
-                                    fontFamily: '"Roboto", sans-serif',
+                                    fontFamily: '"Moon", sans-serif',
                                     color: selectedTopic === topic ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
                                     cursor: 'pointer',
-                                    transition: 'color 0.2s',
-                                    fontWeight: selectedTopic === topic ? '600' : '400'
+                                    transition: 'all 0.2s',
+                                    fontWeight: selectedTopic === topic ? 'bold' : '400',
+                                    textShadow: selectedTopic === topic ? '0 0 10px rgba(255,255,255,0.5)' : 'none'
                                 }}
                                 onMouseOver={(e) => {
                                     if (selectedTopic !== topic) e.target.style.color = 'white';
@@ -251,14 +364,14 @@ function GlobeView({ onBackToHome }) {
                                 {topic}
                             </span>
                             {index < arr.length - 1 && (
-                                <span style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '0.95rem' }}>/</span>
+                                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem' }}>/</span>
                             )}
                         </React.Fragment>
                     ))}
                 </div>
 
-                {/* Search Button - Right */}
-                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
+                <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                    {/* Add any other buttons here */}
                     <button
                         onClick={onBackToHome}
                         style={{
@@ -420,8 +533,7 @@ function GlobeView({ onBackToHome }) {
                             boxShadow: '0 0 50px rgba(0,0,0,0.5)',
                             overflowY: 'auto',
                             overflowX: 'hidden',
-                            boxSizing: 'border-box',
-                            padding: '2rem'
+                            boxSizing: 'border-box'
                         }}>
 
                         <button
