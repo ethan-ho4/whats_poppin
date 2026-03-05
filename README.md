@@ -10,6 +10,15 @@ This project consists of three integrated components:
 2. **Backend Server** - FastAPI server with vector search, AI chat, and metadata unfurling
 3. **Frontend** - Interactive React app with 3D globe visualization and chat interface
 
+#Showcase Photos
+<img width="2821" height="1454" alt="image" src="https://github.com/user-attachments/assets/a71de7ba-d950-4d84-926d-da5a634a25c8" />
+
+<img width="2476" height="1301" alt="image" src="https://github.com/user-attachments/assets/c0247da4-8a15-4568-929b-a4c89156249a" />
+
+<img width="2475" height="1301" alt="image" src="https://github.com/user-attachments/assets/3a13db6d-9ed4-4d44-ad28-cc2e7541e1fd" />
+
+<img width="2475" height="1301" alt="image" src="https://github.com/user-attachments/assets/daaab538-425b-4ac8-b10a-2cb78d6f9222" />
+
 ### How It Works
 
 ```mermaid
